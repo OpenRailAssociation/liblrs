@@ -7,8 +7,10 @@ use liblrs::lrs::LrmHandle;
 use liblrs::lrs::{LrsBase, Properties};
 use liblrs::lrs_ext::*;
 use pyo3::{exceptions::PyTypeError, prelude::*};
+use pyo3_stub_gen::{define_stub_info_gatherer, derive::*};
 
 /// Holds the whole Linear Referencing System.
+#[gen_stub_pyclass]
 #[pyclass]
 pub struct Lrs {
     lrs: ExtLrs,
@@ -30,6 +32,7 @@ fn liblrs_python(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 #[derive(Clone, Copy, Debug)]
 /// A geographical [`Point`], it can be either a projected or spherical coordinates.
+#[gen_stub_pyclass]
 #[pyclass]
 pub struct Point {
     /// Position on x-axis or `longitude`.
@@ -40,6 +43,7 @@ pub struct Point {
     pub y: f64,
 }
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl Point {
     #[new]
@@ -90,6 +94,7 @@ impl From<Point> for geo_types::Coord {
 
 #[derive(Clone, Debug)]
 /// A Node is a topological element of the [`Lrs`] that represents a intersection (or an extremity) of an [`Lrm`]
+#[gen_stub_pyclass]
 #[pyclass]
 pub struct Node {
     /// Identifies this [`Node`].
@@ -117,6 +122,7 @@ impl From<&liblrs::lrs::Node> for Node {
 /// A segment is a topological element of the [`Lrs`] that represents a piece of the [`Curve`] of an [`Lrm`]
 ///
 /// It has a start and end [`Node`].
+#[gen_stub_pyclass]
 #[pyclass]
 pub struct Segment {
     /// Identifies this [`Segment`]
@@ -146,6 +152,7 @@ impl From<&liblrs::lrs::Segment> for Segment {
 
 #[pyclass]
 #[derive(Clone, Debug)]
+#[gen_stub_pyclass]
 /// Represent a position on an [`LrmScale`] relative as an `offset` to an [`Anchor`].
 pub struct LrmScaleMeasure {
     #[pyo3(get, set)]
@@ -174,6 +181,7 @@ impl From<&LrmScaleMeasure> for liblrs::lrm_scale::LrmScaleMeasure {
     }
 }
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl LrmScaleMeasure {
     #[new]
@@ -191,6 +199,7 @@ impl LrmScaleMeasure {
 }
 
 #[derive(Clone, Copy)]
+#[gen_stub_pyclass]
 #[pyclass]
 /// A traversal is composed by segments
 pub struct SegmentOfTraversal {
@@ -202,6 +211,7 @@ pub struct SegmentOfTraversal {
     pub reversed: bool,
 }
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl SegmentOfTraversal {
     #[new]
@@ -223,6 +233,7 @@ impl From<SegmentOfTraversal> for liblrs::builder::SegmentOfTraversal {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[gen_stub_pyclass]
 #[pyclass]
 /// The linear position of an anchor doesn’t always match the measured distance
 /// For example if a road was transformed into a bypass, resulting in a longer road,
@@ -238,6 +249,7 @@ pub struct AnchorOnLrm {
     pub distance_along_lrm: f64,
 }
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl AnchorOnLrm {
     #[new]
@@ -263,6 +275,7 @@ impl From<AnchorOnLrm> for liblrs::builder::AnchorOnLrm {
 }
 
 #[derive(Debug)]
+#[gen_stub_pyclass]
 #[pyclass]
 /// An `Anchor` is a reference point for a given [`Curve`].
 /// It can be a milestone, a bridge…
@@ -303,6 +316,7 @@ impl From<&liblrs::lrm_scale::Anchor> for Anchor {
     }
 }
 
+#[gen_stub_pyclass]
 #[pyclass]
 /// The result of a projection onto an [`LrmScale`].
 pub struct LrmProjection {
@@ -330,11 +344,12 @@ impl From<&liblrs::lrs::LrmProjection> for LrmProjection {
     }
 }
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl Lrs {
     /// Load the data.
     #[new]
-    pub fn load(data: &[u8]) -> PyResult<Lrs> {
+    pub fn load(#[gen_stub(override_type(type_repr = "bytes"))] data: &[u8]) -> PyResult<Lrs> {
         ExtLrs::load(data)
             .map(|lrs| Self { lrs })
             .map_err(|e| PyTypeError::new_err(e.to_string()))
@@ -462,11 +477,13 @@ impl Lrs {
     }
 }
 
+#[gen_stub_pyclass]
 #[pyclass]
 struct Builder {
     inner: liblrs::builder::Builder<'static>,
 }
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl Builder {
     #[new]
@@ -637,3 +654,5 @@ impl Builder {
             .unwrap()
     }
 }
+
+define_stub_info_gatherer!(stub_info);

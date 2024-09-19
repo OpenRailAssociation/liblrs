@@ -37,7 +37,11 @@ pip install
 maturin develop
 ```
 
-Bindings with PyO3 to liblrs
+If you change the python interface, you will need to generate the subs file with:
+
+```
+cargo run --bin stub_gen
+```
 
 ## Publishing
 
