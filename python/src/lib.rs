@@ -3,9 +3,9 @@
 
 use std::path::PathBuf;
 
-use liblrs::lrs::LrmHandle;
+use liblrs::builder::Properties;
+use liblrs::lrs::{self, LrmHandle};
 use liblrs::lrs_ext::*;
-use liblrs::{builder::Properties, lrs::LrsBase};
 use pyo3::{exceptions::PyTypeError, prelude::*};
 
 /// Holds the whole Linear Referencing System.
@@ -230,17 +230,6 @@ impl Anchor {
     }
 }
 
-#[pyclass]
-/// The result of a projection onto an [`LrmScale`].
-pub struct LrmProjection {
-    /// Contains `measure` ([`LrmScaleMeasure`]) and `lrm` ([`LrmHandle`]).
-    #[pyo3(get, set)]
-    pub measure: LrmScaleMeasure,
-    /// How far from the [`Lrm`] is the [`Point`] that has been projected.
-    #[pyo3(get, set)]
-    pub orthogonal_offset: f64,
-}
-
 impl From<&liblrs::lrm_scale::Anchor> for Anchor {
     fn from(value: &liblrs::lrm_scale::Anchor) -> Self {
         Self {
@@ -252,12 +241,32 @@ impl From<&liblrs::lrm_scale::Anchor> for Anchor {
     }
 }
 
+#[pyclass]
+/// The result of a projection onto an [`LrmScale`].
+pub struct LrmProjection {
+    /// Contains `measure` ([`LrmScaleMeasure`]) and `lrm` ([`LrmHandle`]).
+    #[pyo3(get, set)]
+    pub measure: LrmScaleMeasure,
+    /// How far from the [`Lrm`] is the [`Point`] that has been projected.
+    #[pyo3(get, set)]
+    pub orthogonal_offset: f64,
+}
+
+impl From<lrs::LrmProjection> for LrmProjection {
+    fn from(value: lrs::LrmProjection) -> Self {
+        Self {
+            measure: (&value.measure.measure).into(),
+            orthogonal_offset: value.orthogonal_offset,
+        }
+    }
+}
+
 #[pymethods]
 impl Lrs {
     /// Load the data.
     #[new]
-    pub fn load(data: &[u8]) -> PyResult<Lrs> {
-        ExtLrs::load(data)
+    pub fn load(data: &[u8], planar: bool) -> PyResult<Lrs> {
+        ExtLrs::load(data, planar)
             .map(|lrs| Self { lrs })
             .map_err(|e| PyTypeError::new_err(e.to_string()))
     }
@@ -300,9 +309,8 @@ impl Lrs {
     /// Get the positon along the curve given a [`LrmScaleMeasure`]
     /// The value will be between 0.0 and 1.0, both included
     pub fn locate_point(&self, lrm_index: usize, measure: &LrmScaleMeasure) -> PyResult<f64> {
-        self.lrs.lrs.lrms[lrm_index]
-            .scale
-            .locate_point(&measure.into())
+        self.lrs
+            .locate_point(lrm_index, &(measure.into()))
             .map_err(|e| PyTypeError::new_err(e.to_string()))
     }
 
@@ -321,7 +329,7 @@ impl Lrs {
 
     /// Given a ID returns the corresponding lrs index (or None if not found)
     pub fn find_lrm(&self, lrm_id: &str) -> Option<usize> {
-        self.lrs.lrs.get_lrm(lrm_id).map(|handle| handle.0)
+        self.lrs.find_lrm(lrm_id)
     }
 
     /// Projects a [`Point`] on all applicable [`Traversal`]s to a given [`Lrm`].
@@ -329,16 +337,9 @@ impl Lrs {
     /// The result is sorted by `orthogonal_offset`: the nearest [`Lrm`] to the [`Point`] is the first item.
     fn lookup(&self, point: Point, lrm_handle: usize) -> Vec<LrmProjection> {
         self.lrs
-            .lrs
             .lookup(point.into(), LrmHandle(lrm_handle))
-            .iter()
-            .map(|p| LrmProjection {
-                measure: LrmScaleMeasure {
-                    anchor_name: p.measure.measure.anchor_name.to_owned(),
-                    scale_offset: p.measure.measure.scale_offset,
-                },
-                orthogonal_offset: p.orthogonal_offset,
-            })
+            .into_iter()
+            .map(|p| p.into())
             .collect()
     }
 }
@@ -457,10 +458,10 @@ impl Builder {
     }
 
     /// Builds the lrs to be used directly
-    pub fn build_lrs(&mut self, properties: Properties) -> PyResult<Lrs> {
+    pub fn build_lrs(&mut self, properties: Properties, planar: bool) -> PyResult<Lrs> {
         let lrs = self
             .inner
-            .build_lrs(properties)
+            .build_lrs(properties, planar)
             .map_err(|e| PyTypeError::new_err(e.to_string()))?;
         Ok(Lrs { lrs })
     }

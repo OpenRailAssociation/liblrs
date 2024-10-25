@@ -407,8 +407,8 @@ impl<'fbb> Builder<'fbb> {
     }
 
     /// Builds the LRS from the data.
-    pub fn build_lrs(&mut self, properties: Properties) -> Result<ExtLrs, String> {
-        ExtLrs::load(self.build_data(properties))
+    pub fn build_lrs(&mut self, properties: Properties, planar: bool) -> Result<ExtLrs, String> {
+        ExtLrs::load(self.build_data(properties), planar)
     }
 
     /// Return the mapping between a traversal id and its index in the builder.
@@ -643,7 +643,7 @@ mod tests {
         };
         b.add_lrm("lrm", traversal, &[aol, aol2], properties!());
 
-        let lrs = b.build_lrs(properties!()).unwrap();
+        let lrs = b.build_lrs(properties!(), true).unwrap();
         let lrm = lrs
             .resolve(
                 0,
