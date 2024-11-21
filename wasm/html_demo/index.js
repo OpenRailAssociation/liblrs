@@ -167,7 +167,7 @@ async function file_selected(el) {
         }
     });
 
-    
+
 
     map.on('mouseenter', 'lrms-hitbox', () => {
         map.getCanvas().style.cursor = 'pointer'
@@ -175,7 +175,7 @@ async function file_selected(el) {
     map.on('mouseleave', 'lrms-hitbox', () => {
         map.getCanvas().style.cursor = ''
     })
-  
+
 
     map.on('click', 'lrms-hitbox', (e) => {
 
@@ -194,7 +194,7 @@ async function file_selected(el) {
         let point = lrs.resolve(lrm_id, projection.measure)
         window_lrms.pkStartPoint = turf.point([point.x, point.y]);
         window_lrms.handlePks(false)
-      });
+    });
 
     return {
         features: curves_features,
@@ -208,7 +208,7 @@ async function file_selected(el) {
 let protocol = new Protocol();
 maplibregl.addProtocol('pmtiles', protocol.tile);
 
-map = new maplibregl.Map({
+let map = new maplibregl.Map({
     container: 'map', // container id
     style: process.env.MAPLIBRE_STYLE,
     center: [2.3469, 46.8589], // starting position [lng, lat]
