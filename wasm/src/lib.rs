@@ -1,10 +1,7 @@
 //! High level extensions meant for an easy usage
 //! Those functions are exposed in wasm-bindings
 
-use liblrs::{
-    lrs::{LrmHandle, LrsBase},
-    lrs_ext::*,
-};
+use liblrs::{lrs::LrmHandle, lrs_ext::*};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -135,8 +132,8 @@ pub struct LrmProjection {
 #[wasm_bindgen]
 impl Lrs {
     /// Load the data.
-    pub fn load(data: &[u8]) -> Result<Lrs, String> {
-        ExtLrs::load(data).map(|lrs| Self { lrs })
+    pub fn load(data: &[u8], planar: bool) -> Result<Lrs, String> {
+        ExtLrs::load(data, planar).map(|lrs| Self { lrs })
     }
 
     /// How many LRMs compose the LRS.
@@ -191,7 +188,6 @@ impl Lrs {
     /// The result is sorted by `orthogonal_offset`: the nearest [`Lrm`] to the [`Point`] is the first item.
     pub fn lookup(&self, point: Point, lrm_handle: usize) -> Vec<LrmProjection> {
         self.lrs
-            .lrs
             .lookup(point.into(), LrmHandle(lrm_handle))
             .iter()
             .map(|p| LrmProjection {

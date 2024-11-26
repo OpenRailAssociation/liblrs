@@ -13,7 +13,7 @@ set_panic_hook()
 async function file_selected(el) {
     const [file] = el.target.files;
     const data = await file.arrayBuffer()
-    const lrs = await Lrs.load(new Uint8Array(data));
+    const lrs = await Lrs.load(new Uint8Array(data), planar=false);
 
     const curves_features = []
     const anchors_features = []
