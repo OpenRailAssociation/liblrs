@@ -4,6 +4,8 @@
 use geo::Point;
 use thiserror::Error;
 
+use crate::builder::Properties;
+
 /// Measurement along the `Curve`. Typically in meters.
 pub type CurvePosition = f64;
 
@@ -44,6 +46,9 @@ pub struct Anchor {
 
     /// Position of the anchor on the `Curve`.
     pub point: Option<Point>,
+
+    /// Metadata to describe the node
+    pub properties: Properties,
 }
 
 impl Anchor {
@@ -53,12 +58,14 @@ impl Anchor {
         scale_position: ScalePosition,
         curve_position: CurvePosition,
         point: Option<Point>,
+        properties: Properties,
     ) -> Self {
         Self {
             id: Some(name.to_owned()),
             scale_position,
             curve_position,
             point,
+            properties,
         }
     }
 
@@ -67,12 +74,14 @@ impl Anchor {
         scale_position: ScalePosition,
         curve_position: CurvePosition,
         point: Option<Point>,
+        properties: Properties,
     ) -> Self {
         Self {
             id: None,
             scale_position,
             curve_position,
             point,
+            properties,
         }
     }
 
@@ -258,14 +267,16 @@ impl LrmScale {
 pub(crate) mod tests {
     use geo::point;
 
+    use crate::properties;
+
     use super::*;
 
     pub(crate) fn scale() -> LrmScale {
         LrmScale {
             id: "id".to_owned(),
             anchors: vec![
-                Anchor::new("a", 0., 0., Some(point! { x: 0., y: 0. })),
-                Anchor::new("b", 10., 0.5, Some(point! { x: 0., y: 0. })),
+                Anchor::new("a", 0., 0., Some(point! { x: 0., y: 0. }), properties!()),
+                Anchor::new("b", 10., 0.5, Some(point! { x: 0., y: 0. }), properties!()),
             ],
         }
     }
@@ -300,8 +311,8 @@ pub(crate) mod tests {
         let scale = LrmScale {
             id: "id".to_owned(),
             anchors: vec![
-                Anchor::new("a", 0., 2., Some(point! { x: 0., y: 0. })),
-                Anchor::new("b", 10., 3., Some(point! { x: 0., y: 0. })),
+                Anchor::new("a", 0., 2., Some(point! { x: 0., y: 0. }), properties!()),
+                Anchor::new("b", 10., 3., Some(point! { x: 0., y: 0. }), properties!()),
             ],
         };
 
@@ -332,10 +343,10 @@ pub(crate) mod tests {
         let scale = LrmScale {
             id: "id".to_owned(),
             anchors: vec![
-                Anchor::new_unnamed(0., 100., Some(point! { x: 0., y: 0. })),
-                Anchor::new("a", 1., 200., Some(point! { x: 0., y: 0. })),
-                Anchor::new("b", 3., 300., Some(point! { x: 0., y: 0. })),
-                Anchor::new_unnamed(4., 400., Some(point! { x: 0., y: 0. })),
+                Anchor::new_unnamed(0., 100., Some(point! { x: 0., y: 0. }), properties!()),
+                Anchor::new("a", 1., 200., Some(point! { x: 0., y: 0. }), properties!()),
+                Anchor::new("b", 3., 300., Some(point! { x: 0., y: 0. }), properties!()),
+                Anchor::new_unnamed(4., 400., Some(point! { x: 0., y: 0. }), properties!()),
             ],
         };
 
@@ -403,8 +414,8 @@ pub(crate) mod tests {
         let scale = LrmScale {
             id: "id".to_owned(),
             anchors: vec![
-                Anchor::new("a", 1000. + 0., -2., None),
-                Anchor::new_unnamed(1000. + 300., 1., None),
+                Anchor::new("a", 1000. + 0., -2., None, properties!()),
+                Anchor::new_unnamed(1000. + 300., 1., None, properties!()),
             ],
         };
 
@@ -426,9 +437,9 @@ pub(crate) mod tests {
         let scale = LrmScale {
             id: "id".to_owned(),
             anchors: vec![
-                Anchor::new("a", 0., 0., None),
-                Anchor::new_unnamed(1., 0.4, None),
-                Anchor::new_unnamed(9., 0.6, None),
+                Anchor::new("a", 0., 0., None, properties!()),
+                Anchor::new_unnamed(1., 0.4, None, properties!()),
+                Anchor::new_unnamed(9., 0.6, None, properties!()),
             ],
         };
 

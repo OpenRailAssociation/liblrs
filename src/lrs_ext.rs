@@ -3,6 +3,7 @@
 
 use geo::{Coord, Point};
 
+use crate::builder::Properties;
 use crate::curves::{Curve, SphericalLineStringCurve};
 use crate::lrm_scale::Anchor;
 use crate::lrm_scale::LrmScaleMeasure;
@@ -40,8 +41,8 @@ impl ExtLrs {
     }
 
     /// `id` of the [`LrmScale`].
-    pub fn get_lrm_scale_id(&self, index: usize) -> String {
-        self.lrs.lrms[index].scale.id.clone()
+    pub fn get_lrm_scale_id(&self, lrm_index: usize) -> String {
+        self.lrs.lrms[lrm_index].scale.id.clone()
     }
 
     /// All the [`Anchor`]s of a LRM.
@@ -84,5 +85,20 @@ impl ExtLrs {
             Some(linestring) => Ok(linestring.0),
             None => Err("Could not find sublinestring".to_string()),
         }
+    }
+
+    /// [`Properties`] of the lrs
+    pub fn lrs_properties(&self) -> &Properties {
+        &self.lrs.properties
+    }
+
+    /// [`Properties`] for a given lrm
+    pub fn lrm_properties(&self, lrm_index: usize) -> &Properties {
+        &self.lrs.lrms[lrm_index].properties
+    }
+
+    /// [`Properties`] for a given anchor
+    pub fn anchor_properties(&self, lrm_index: usize, anchor_index: usize) -> &Properties {
+        &self.lrs.lrms[lrm_index].scale.anchors[anchor_index].properties
     }
 }
