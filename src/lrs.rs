@@ -11,6 +11,7 @@ use std::cmp::Ordering;
 use geo::orient::Direction;
 use thiserror::Error;
 
+use crate::builder::{from_fb, Properties};
 use crate::curves::{Curve, CurveError};
 use crate::lrm_scale::{
     Anchor, CurvePosition, LrmScale, LrmScaleError, LrmScaleMeasure, ScalePosition,
@@ -34,6 +35,8 @@ pub struct Lrm {
     pub reference_traversal: TraversalHandle,
     /// All the [`Traversal`]s where this [`Lrm`] applies.
     pub traversals: Vec<TraversalHandle>,
+    /// Metadata to describe the Lrm
+    pub properties: Properties,
 }
 
 /// A [`Traversal`] is path in the network that ends [`Curve`].
@@ -54,6 +57,8 @@ pub struct Lrs<CurveImpl: Curve> {
     pub lrms: Vec<Lrm>,
     /// All the [`Traversal`] of this Lrs
     pub traversals: Vec<Traversal<CurveImpl>>,
+    /// Metadata to describe the Lrs
+    pub properties: Properties,
 }
 
 /// The result of a projection onto an [`LrmScale`].
@@ -158,6 +163,7 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
         let mut result = Self {
             lrms: vec![],
             traversals: vec![],
+            properties: from_fb(lrs.properties()),
         };
 
         let source_anchors = lrs
@@ -229,8 +235,19 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
                         .unwrap_or_else(|| project(&anchor, curve));
 
                     match anchor.name() {
-                        Some(name) => Anchor::new(name, scale_position, curve_position, coord),
-                        None => Anchor::new_unnamed(scale_position, curve_position, coord),
+                        Some(name) => Anchor::new(
+                            name,
+                            scale_position,
+                            curve_position,
+                            coord,
+                            from_fb(anchor.properties()),
+                        ),
+                        None => Anchor::new_unnamed(
+                            scale_position,
+                            curve_position,
+                            coord,
+                            from_fb(anchor.properties()),
+                        ),
                     }
                 })
                 .collect();
@@ -242,6 +259,7 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
                 },
                 reference_traversal: TraversalHandle(reference_traversal_idx),
                 traversals: vec![TraversalHandle(reference_traversal_idx)],
+                properties: from_fb(raw_lrm.properties()),
             };
 
             result.lrms.push(lrm);
@@ -607,7 +625,7 @@ mod tests {
     use approx::assert_relative_eq;
     use geo::line_string;
 
-    use crate::curves::PlanarLineStringCurve;
+    use crate::{curves::PlanarLineStringCurve, properties};
 
     use super::*;
 
@@ -628,19 +646,27 @@ mod tests {
             reference_traversal: TraversalHandle(0),
             scale: crate::lrm_scale::tests::scale(),
             traversals: vec![TraversalHandle(0)],
+            properties: properties!("some key" => "some value"),
         };
 
         let mut lrm2 = Lrm {
             reference_traversal: TraversalHandle(0),
             scale: crate::lrm_scale::tests::scale(),
             traversals: vec![TraversalHandle(0), TraversalHandle(1)],
+            properties: properties!(),
         };
         "id2".clone_into(&mut lrm2.scale.id);
 
         Lrs {
             lrms: vec![lrm, lrm2],
             traversals: vec![traversal, traversal2],
+            properties: properties!("source" => "test"),
         }
+    }
+
+    #[test]
+    fn read_properties() {
+        assert_eq!(lrs().properties["source"], "test");
     }
 
     #[test]

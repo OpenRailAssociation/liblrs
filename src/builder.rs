@@ -25,6 +25,17 @@ macro_rules! properties {
     }};
 }
 
+/// Builds a [`Properties`] from a FlatBuffer vector of Property
+///
+/// Implementation note: as [`Properties`] is just an alias, we cannot `impl` for it (e.g. Into)
+pub fn from_fb(properties: Option<Vector<ForwardsUOffset<lrs_generated::Property>>>) -> Properties {
+    properties
+        .unwrap_or_default()
+        .iter()
+        .map(|property| (property.key().to_string(), property.value().to_string()))
+        .collect()
+}
+
 /// The linear position of an [`Anchor`] doesn’t always match the measured distance.
 /// For example if a road was transformed into a bypass, resulting in a longer road,
 /// but measurements are kept the same.
@@ -655,5 +666,21 @@ mod tests {
             .unwrap();
         assert_relative_eq!(lrm.x(), 0.);
         assert_relative_eq!(lrm.y(), 0.);
+    }
+
+    #[test]
+    fn properties() {
+        let mut b = Builder::new();
+        let traversal = build_traversal(&mut b);
+        b.add_lrm(
+            "lrm",
+            traversal,
+            &[],
+            properties!("test_key" => "test_value"),
+        );
+        let lrs = b.build_lrs(properties!()).unwrap();
+
+        let p = lrs.lrm_properties(0);
+        assert_eq!(p["test_key"], "test_value")
     }
 }
