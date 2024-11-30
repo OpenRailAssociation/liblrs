@@ -20,7 +20,7 @@
         "pmtiles": "4.0.1"
     },
     "name": "liblrs",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "repository": {
         "type": "git",
         "url": "https://github.com/OpenRailAssociation/liblrs/"
