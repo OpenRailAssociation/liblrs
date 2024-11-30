@@ -218,6 +218,24 @@ class Lrs:
         """
         ...
 
+    def lrs_properties(self) -> dict[str, str]:
+        r"""
+        [`Properties`] of the lrs
+        """
+        ...
+
+    def lrm_properties(self, lrm_index:int) -> dict[str, str]:
+        r"""
+        [`Properties`] for a given lrm
+        """
+        ...
+
+    def anchor_properties(self, lrm_index:int, anchor_index:int) -> dict[str, str]:
+        r"""
+        [`Properties`] for a given anchor
+        """
+        ...
+
 
 class Point:
     r"""
