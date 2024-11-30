@@ -255,11 +255,12 @@ impl LrmScale {
 }
 
 #[cfg(test)]
-pub mod tests {
+pub(crate) mod tests {
     use geo::point;
 
     use super::*;
-    pub fn scale() -> LrmScale {
+
+    pub(crate) fn scale() -> LrmScale {
         LrmScale {
             id: "id".to_owned(),
             anchors: vec![
