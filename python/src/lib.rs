@@ -341,6 +341,21 @@ impl Lrs {
             })
             .collect()
     }
+
+    /// [`Properties`] of the lrs
+    pub fn lrs_properties(&self) -> Properties {
+        self.lrs.lrs_properties().clone()
+    }
+
+    /// [`Properties`] for a given lrm
+    pub fn lrm_properties(&self, lrm_index: usize) -> Properties {
+        self.lrs.lrm_properties(lrm_index).clone()
+    }
+
+    /// [`Properties`] for a given anchor
+    pub fn anchor_properties(&self, lrm_index: usize, anchor_index: usize) -> Properties {
+        self.lrs.anchor_properties(lrm_index, anchor_index).clone()
+    }
 }
 
 #[pyclass]
