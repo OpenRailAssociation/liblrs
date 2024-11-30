@@ -10,4 +10,5 @@ crate-type = ["cdylib"]
 liblrs = { path = ".." }
 geo-types = "*"
 wasm-bindgen = "0.2.92"
+serde-wasm-bindgen = "0.6.5"
 console_error_panic_hook = "0.1.1"

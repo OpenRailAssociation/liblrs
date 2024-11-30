@@ -203,6 +203,24 @@ impl Lrs {
             })
             .collect()
     }
+
+    /// [`Properties`] of the lrs
+    pub fn lrs_properties(&self) -> JsValue {
+        serde_wasm_bindgen::to_value(self.lrs.lrs_properties())
+            .expect("Could not convert Property to JsValue")
+    }
+
+    /// [`Properties`] for a given lrm
+    pub fn lrm_properties(&self, lrm_index: usize) -> JsValue {
+        serde_wasm_bindgen::to_value(self.lrs.lrm_properties(lrm_index))
+            .expect("Could not convert Property to JsValue")
+    }
+
+    /// [`Properties`] for a given anchor
+    pub fn anchor_properties(&self, lrm_index: usize, anchor_index: usize) -> JsValue {
+        serde_wasm_bindgen::to_value(self.lrs.anchor_properties(lrm_index, anchor_index))
+            .expect("Could not convert Property to JsValue")
+    }
 }
 
 #[wasm_bindgen]
