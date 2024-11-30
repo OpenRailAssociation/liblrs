@@ -18,7 +18,7 @@ pub type Properties = std::collections::HashMap<String, String>;
 
 #[macro_export]
 /// Build a properties map:
-/// `properties!("source" => "openstreetmap", "licence" => "ODbL")`.
+/// `properties!("source" => "openstreetmap", "license" => "ODbL")`.
 macro_rules! properties {
     ($($k:expr => $v:expr),* $(,)?) => {{
         core::convert::From::from([$(($k.to_owned(), $v.to_owned()),)*])
@@ -483,7 +483,7 @@ impl<'fbb> Builder<'fbb> {
         }
     }
 
-    /// Gives the euclidian distance between two traversals
+    /// Gives the euclidean distance between two traversals
     /// While working on spherical coordinates, this usually doesn’t make much sense,
     /// this is good enough to sort curves by distance
     pub fn euclidean_distance(&self, lrm_index_a: usize, lrm_index_b: usize) -> f64 {
@@ -515,7 +515,7 @@ impl<'fbb> Builder<'fbb> {
 
     /// Orient the traversal according to two points
     ///
-    /// In the end, the first coordinate must be closer to the begining than the second
+    /// In the end, the first coordinate must be closer to the beginning than the second
     /// If both points are so far from the curve that they are projected to a end, we consider the offset to the curve
     pub fn orient_along_points(
         &mut self,

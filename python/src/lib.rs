@@ -363,7 +363,7 @@ impl Builder {
         self.inner.add_node(id, coord.into(), properties)
     }
 
-    /// Add a new anchor by its cooordinates
+    /// Add a new anchor by its coordinates
     #[pyo3(signature = (id, coord, properties, name=None))]
     pub fn add_anchor(
         &mut self,
@@ -391,7 +391,7 @@ impl Builder {
     /// Add a new segment
     ///
     /// The geometry represents the curve
-    /// start_node_index and end_node_index are the topological extremeties returned by `add_node`
+    /// start_node_index and end_node_index are the topological extremities returned by `add_node`
     pub fn add_segment(
         &mut self,
         id: &str,
@@ -418,7 +418,7 @@ impl Builder {
 
     /// Add a linear referencing model
     ///
-    /// It is composed by the traversal identified by traversa_index (that represents the curve)
+    /// It is composed by the traversal identified by traversal_index (that represents the curve)
     /// and the anchors (that represent the milestones)
     pub fn add_lrm(
         &mut self,
@@ -500,7 +500,7 @@ impl Builder {
 
     /// Orient the traversal according to two points
     ///
-    /// In the end, the first coordinate must be closer to the begining than the second
+    /// In the end, the first coordinate must be closer to the beginning than the second
     /// If both points are so far from the curve that they are projected to a end, we consider the offset to the curve
     pub fn orient_along_points(
         &mut self,
