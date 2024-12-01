@@ -22,7 +22,7 @@ path = "src/geometry_from_osm.rs"
 approx = "0.5.1"
 flatbuffers = "24.3"
 geo = "0.28"
-thiserror = "1.0"
+thiserror = "2.0"
 osm4routing = "0.7.0"
-clap = { version = "4.5.1", features = ["derive"] }
+clap = { version = "4.5", features = ["derive"] }
 num-traits = "0.2"
