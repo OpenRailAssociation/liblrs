@@ -6,19 +6,18 @@
     "devDependencies": {
         "@wasm-tool/wasm-pack-plugin": "1.7.0",
         "css-loader": "7.1.2",
-        "html-webpack-plugin": "5.6.0",
+        "html-webpack-plugin": "5.6.3",
         "style-loader": "4.0.0",
-        "text-encoding": "^0.7.0",
-        "webpack": "5.95.0",
+        "webpack": "5.96.1",
         "webpack-cli": "5.1.4",
         "webpack-dev-server": "5.1.0"
     },
     "dependencies": {
         "@turf/bbox": "7.1.0",
         "@turf/helpers": "7.1.0",
-        "alpinejs": "3.14.1",
+        "alpinejs": "3.14.5",
         "maplibre-gl": "4.7.1",
-        "pmtiles": "3.2.0"
+        "pmtiles": "4.0.1"
     },
     "name": "liblrs",
     "version": "0.2.3",
