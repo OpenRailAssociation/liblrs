@@ -101,7 +101,7 @@ pub struct PlanarLineStringCurve {
 
 impl Curve for PlanarLineStringCurve {
     fn new(geom: LineString, max_extent: f64) -> Self {
-        let length = geom.euclidean_length();
+        let length = geom.length::<Euclidean>();
         Self {
             max_extent,
             geom,
@@ -144,7 +144,7 @@ impl Curve for PlanarLineStringCurve {
                     Orientation::Clockwise => 1.,
                     _ => -1.,
                 };
-                let offset = point.euclidean_distance(&self.geom) * sign;
+                let offset = Euclidean::distance(&self.geom, &point) * sign;
 
                 Ok(CurveProjection {
                     distance_along_curve,
@@ -204,7 +204,7 @@ impl Curve for PlanarLineStringCurve {
         let line = self
             .geom
             .lines_iter()
-            .find(|line| line.euclidean_distance(&point) < self.length / 1e9)
+            .find(|line| Euclidean::distance(line, &point) < self.length / 1e9)
             .ok_or(CurveError::NotFiniteCoordinates)?;
 
         // translate to (0, 0) and normalize by the length of the curve to get unit vector of tangent
@@ -238,7 +238,7 @@ impl Curve for PlanarLineStringCurve {
 
             let mut points = Vec::new();
             for segment in self.geom.lines() {
-                let length = segment.euclidean_length();
+                let length = segment.length::<Euclidean>();
                 if cum_length + length >= start_fractional_length && points.is_empty() {
                     let segment_fraction = (start_fractional_length - cum_length) / length;
                     match segment.line_interpolate_point(segment_fraction) {
@@ -317,8 +317,8 @@ impl SphericalLineStringCurve {
         let mut closest_dist_to_point = f64::infinity();
         let mut fraction = 0.0;
         for segment in self.geom.lines() {
-            let segment_distance_to_point = segment.euclidean_distance(p);
-            let segment_length = segment.geodesic_length();
+            let segment_distance_to_point = Euclidean::distance(&segment, p);
+            let segment_length = segment.length::<Geodesic>();
             let segment_fraction = segment.line_locate_point(p)?; // if any segment has a None fraction, return None
             if segment_distance_to_point < closest_dist_to_point {
                 closest_dist_to_point = segment_distance_to_point;
@@ -336,7 +336,7 @@ impl SphericalLineStringCurve {
             let fractional_length = total_length * fraction;
             let mut cum_length = f64::zero();
             for segment in self.geom.lines() {
-                let length = segment.geodesic_length();
+                let length = segment.length::<Geodesic>();
                 if cum_length + length >= fractional_length {
                     let segment_fraction = (fractional_length - cum_length) / length;
                     return segment.line_interpolate_point(segment_fraction);
@@ -363,7 +363,7 @@ impl SphericalLineStringCurve {
 
 impl Curve for SphericalLineStringCurve {
     fn new(geom: LineString, max_extent: f64) -> Self {
-        let length = geom.geodesic_length();
+        let length = geom.length::<Geodesic>();
         Self {
             max_extent,
             geom,
@@ -408,7 +408,7 @@ impl Curve for SphericalLineStringCurve {
                     Orientation::Clockwise => 1.,
                     _ => -1.,
                 };
-                let offset = projected_coords.geodesic_distance(&point) * sign;
+                let offset = Geodesic::distance(projected_coords, point) * sign;
 
                 Ok(CurveProjection {
                     distance_along_curve,
@@ -431,7 +431,7 @@ impl Curve for SphericalLineStringCurve {
 
         // go through each segment and look for the one that frame the distance that we seek
         for segment in self.geom.lines() {
-            let segment_length = segment.geodesic_length();
+            let segment_length = segment.length::<Geodesic>();
             if accumulated_length + segment_length >= fractional_length {
                 let segment_fraction = (fractional_length - accumulated_length) / segment_length;
                 let segment_start = Point::from(segment.start);
@@ -439,7 +439,11 @@ impl Curve for SphericalLineStringCurve {
 
                 // get the Point at a geodesic distance between two Points
                 // of a certain fraction of length on this distance
-                return Ok(segment_start.geodesic_intermediate(&segment_end, segment_fraction));
+                return Ok(Geodesic::point_at_ratio_between(
+                    segment_start,
+                    segment_end,
+                    segment_fraction,
+                ));
             }
             accumulated_length += segment_length;
         }
@@ -452,14 +456,12 @@ impl Curve for SphericalLineStringCurve {
         let max_point = geo::Point(self.geom.bounding_rect().unwrap().max());
 
         // add max_extend distance in South and then West direction
-        let min_point_extended = min_point
-            .geodesic_destination(180., self.max_extent)
-            .geodesic_destination(270., self.max_extent);
+        let min_point_extended = Geodesic::destination(min_point, 180., self.max_extent);
+        let min_point_extended = Geodesic::destination(min_point_extended, 270., self.max_extent);
 
         // add max_extend distance in North and then East direction
-        let max_point_extended = max_point
-            .geodesic_destination(0., self.max_extent)
-            .geodesic_destination(90., self.max_extent);
+        let max_point_extended = Geodesic::destination(max_point, 0., self.max_extent);
+        let max_point_extended = Geodesic::destination(max_point_extended, 90., self.max_extent);
 
         Rect::new(min_point_extended, max_point_extended)
     }
@@ -469,7 +471,7 @@ impl Curve for SphericalLineStringCurve {
     // to get the intersection(s) closer to the real closest path.
     fn intersect_segment(&self, segment: Line) -> Option<Point> {
         self.geom
-            .densify_haversine(self.densify_by)
+            .densify::<Haversine>(self.densify_by)
             .lines()
             .flat_map(|curve_line| {
                 match geo::line_intersection::line_intersection(segment, curve_line) {
@@ -493,18 +495,18 @@ impl Curve for SphericalLineStringCurve {
         let distance_along_curve = curve_position * self.length;
         // go through each segment and look for the one that frame the distance that we seek
         let mut accumulated_length = 0.;
-        for segment in self.geom.densify_haversine(self.densify_by).lines() {
-            let segment_length = segment.geodesic_length();
+        for segment in self.geom.densify::<Haversine>(self.densify_by).lines() {
+            let segment_length = segment.length::<Geodesic>();
             if accumulated_length + segment_length >= distance_along_curve {
                 // get Points from the segment that frame the point
                 let start = geo::Point(segment.start);
                 let end = geo::Point(segment.end);
 
                 // get bearing from start Point and end Point of the segment, and add 90° clockwise rotation to it
-                let normal_vector_bearing = start.geodesic_bearing(end) + 90.;
+                let normal_vector_bearing = Geodesic::bearing(start, end) + 90.;
 
                 // get end Point from the end of the segment for the normal vector bearing value and 1m of (haversine) length
-                let end_normal = end.geodesic_destination(normal_vector_bearing, 1.);
+                let end_normal = Geodesic::destination(end, normal_vector_bearing, 1.);
 
                 return Ok((end_normal.x() - end.x(), end_normal.y() - end.y()));
             }
@@ -532,7 +534,7 @@ impl Curve for SphericalLineStringCurve {
 
             let mut points = Vec::new();
             for segment in self.geom.lines() {
-                let length = segment.geodesic_length();
+                let length = segment.length::<Geodesic>();
                 if cum_length + length >= start_fractional_length && points.is_empty() {
                     let segment_fraction = (start_fractional_length - cum_length) / length;
                     match segment.line_interpolate_point(segment_fraction) {
