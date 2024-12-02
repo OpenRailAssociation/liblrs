@@ -8,10 +8,10 @@ extern crate flatbuffers;
 
 use std::cmp::Ordering;
 
+use flatbuffers::{ForwardsUOffset, Vector};
 use geo::orient::Direction;
 use thiserror::Error;
 
-use crate::builder::{from_fb, Properties};
 use crate::curves::{Curve, CurveError};
 use crate::lrm_scale::{
     Anchor, CurvePosition, LrmScale, LrmScaleError, LrmScaleMeasure, ScalePosition,
@@ -618,6 +618,29 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
 
         Ok(geo::Line::new(start, end))
     }
+}
+
+/// A key-value `HashMap` to add metadata to the objects.
+pub type Properties = std::collections::HashMap<String, String>;
+
+#[macro_export]
+/// Build a properties map:
+/// `properties!("source" => "openstreetmap", "licence" => "ODbL")`.
+macro_rules! properties {
+    ($($k:expr => $v:expr),* $(,)?) => {{
+        core::convert::From::from([$(($k.to_owned(), $v.to_owned()),)*])
+    }};
+}
+
+/// Builds a [`Properties`] from a FlatBuffer vector of Property
+///
+/// Implementation note: as [`Properties`] is just an alias, we cannot `impl` for it (e.g. Into)
+pub fn from_fb(properties: Option<Vector<ForwardsUOffset<lrs_generated::Property>>>) -> Properties {
+    properties
+        .unwrap_or_default()
+        .iter()
+        .map(|property| (property.key().to_string(), property.value().to_string()))
+        .collect()
 }
 
 #[cfg(test)]

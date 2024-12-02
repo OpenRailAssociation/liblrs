@@ -3,10 +3,10 @@
 
 use geo::{Coord, Point};
 
-use crate::builder::Properties;
 use crate::curves::{Curve, SphericalLineStringCurve};
 use crate::lrm_scale::Anchor;
 use crate::lrm_scale::LrmScaleMeasure;
+use crate::lrs::Properties;
 use crate::lrs::{self, TraversalPosition};
 use crate::lrs::{LrsBase, LrsError};
 
