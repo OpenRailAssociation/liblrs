@@ -9,32 +9,11 @@ use geo::{Coord, Distance};
 
 use crate::curves::{Curve, CurveError, CurveProjection, SphericalLineStringCurve};
 
+use crate::lrs::Properties;
 use crate::lrs_ext::ExtLrs;
 use crate::lrs_generated::{self, *};
 use crate::osm_helpers::sort_edges;
-
-/// A key-value `HashMap` to add metadata to the objects.
-pub type Properties = std::collections::HashMap<String, String>;
-
-#[macro_export]
-/// Build a properties map:
-/// `properties!("source" => "openstreetmap", "license" => "ODbL")`.
-macro_rules! properties {
-    ($($k:expr => $v:expr),* $(,)?) => {{
-        core::convert::From::from([$(($k.to_owned(), $v.to_owned()),)*])
-    }};
-}
-
-/// Builds a [`Properties`] from a FlatBuffer vector of Property
-///
-/// Implementation note: as [`Properties`] is just an alias, we cannot `impl` for it (e.g. Into)
-pub fn from_fb(properties: Option<Vector<ForwardsUOffset<lrs_generated::Property>>>) -> Properties {
-    properties
-        .unwrap_or_default()
-        .iter()
-        .map(|property| (property.key().to_string(), property.value().to_string()))
-        .collect()
-}
+use crate::properties;
 
 /// The linear position of an [`Anchor`] doesn’t always match the measured distance.
 /// For example if a road was transformed into a bypass, resulting in a longer road,

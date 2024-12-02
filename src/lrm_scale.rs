@@ -4,7 +4,7 @@
 use geo::Point;
 use thiserror::Error;
 
-use crate::builder::Properties;
+use crate::lrs::Properties;
 
 /// Measurement along the `Curve`. Typically in meters.
 pub type CurvePosition = f64;

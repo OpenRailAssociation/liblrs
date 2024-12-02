@@ -4,8 +4,8 @@
 use std::path::PathBuf;
 
 use liblrs::lrs::LrmHandle;
+use liblrs::lrs::{LrsBase, Properties};
 use liblrs::lrs_ext::*;
-use liblrs::{builder::Properties, lrs::LrsBase};
 use pyo3::{exceptions::PyTypeError, prelude::*};
 
 /// Holds the whole Linear Referencing System.
