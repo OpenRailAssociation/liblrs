@@ -17,7 +17,8 @@
         "@turf/helpers": "7.2.0",
         "alpinejs": "3.14.8",
         "maplibre-gl": "5.1.1",
-        "pmtiles": "4.3.0"
+        "pmtiles": "4.3.0",
+        "text-encoding": "^0.7.0"
     },
     "name": "liblrs",
     "version": "0.2.4",
