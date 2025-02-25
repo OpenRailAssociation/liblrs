@@ -8,16 +8,16 @@
         "css-loader": "7.1.2",
         "html-webpack-plugin": "5.6.3",
         "style-loader": "4.0.0",
-        "webpack": "5.96.1",
-        "webpack-cli": "5.1.4",
-        "webpack-dev-server": "5.1.0"
+        "webpack": "5.98.0",
+        "webpack-cli": "6.0.1",
+        "webpack-dev-server": "5.2.0"
     },
     "dependencies": {
-        "@turf/bbox": "7.1.0",
-        "@turf/helpers": "7.1.0",
-        "alpinejs": "3.14.5",
-        "maplibre-gl": "4.7.1",
-        "pmtiles": "4.0.1"
+        "@turf/bbox": "7.2.0",
+        "@turf/helpers": "7.2.0",
+        "alpinejs": "3.14.8",
+        "maplibre-gl": "5.1.1",
+        "pmtiles": "4.3.0"
     },
     "name": "liblrs",
     "version": "0.2.4",
