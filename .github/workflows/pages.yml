@@ -23,7 +23,7 @@ jobs:
             target/
             wasm/node_modules
             wasm/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('wasm/package.json')}}
       - uses: jetli/wasm-pack-action@v0.4.0
       - name: Install dependencies
         run: npm install
