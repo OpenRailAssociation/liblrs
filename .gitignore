@@ -6,3 +6,4 @@ data
 .venv
 .vscode
 pkg
+flatc
