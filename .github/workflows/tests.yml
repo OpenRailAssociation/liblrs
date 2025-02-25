@@ -97,3 +97,15 @@ jobs:
         with:
           args: --release
           working-directory: './python'
+
+  wasm:
+    name: Build wasm release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./wasm
+      - name: Build
+        run: npm run build
+        working-directory: ./wasm        
