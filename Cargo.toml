@@ -19,10 +19,10 @@ name = "geometry_from_osm"
 path = "src/geometry_from_osm.rs"
 
 [dependencies]
-approx = "0.5.1"
-flatbuffers = "24.3"
+approx = "0.5"
+flatbuffers = "25.2"
 geo = "0.29"
 thiserror = "2.0"
-osm4routing = "0.7.0"
+osm4routing = "0.7"
 clap = { version = "4.5", features = ["derive"] }
 num-traits = "0.2"
