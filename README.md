@@ -2,6 +2,12 @@
 
 [Linear Reference](https://en.wikipedia.org/wiki/Linear_referencing) allows to identify a position along a curve (a road, a canal, a railroad…) relative to fixed reference points.
 
+This library allows to manipulate those reference points in Rust, Python, and Javascript.
+
+It is distributed under the [MIT](https://opensource.org/license/mit) licence.
+
+## Vocabulary
+
 We call:
 
 - **anchor** a reference point: it can be milestones, a landmark, an intersection…
