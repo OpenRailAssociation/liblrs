@@ -24,6 +24,6 @@
     "version": "0.2.5",
     "repository": {
         "type": "git",
-        "url": "https://github.com/OpenRailAssociation/liblrs/"
+        "url": "git+https://github.com/OpenRailAssociation/liblrs.git"
     }
 }
