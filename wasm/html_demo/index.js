@@ -21,7 +21,7 @@ async function file_selected(el) {
         const anchors = lrs.get_anchors(i);
         const lrm_id = lrs.get_lrm_scale_id(i);
         const geom = lrs.get_lrm_geom(i);
-        const feature = turf.lineString(geom.map(p => [p.x, p.y]), { id: lrm_id, anchors: anchors.map((a) => a.name) }, {
+        const feature = turf.lineString(geom.map(p => [p.x, p.y]), { id: lrm_id, anchors }, {
             id: i,
         });
         feature.bbox = Bbox(feature)
