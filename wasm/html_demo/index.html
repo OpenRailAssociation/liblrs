@@ -81,9 +81,15 @@
                             </fieldset>
                         </form>
                         <h4>List of anchors (or milestones)</h4>
+                        <p><small>(scale position, curve position)</small></p>
                         <ul>
                             <template x-for="anchor in selectedFeature.properties.anchors">
-                                <li x-text="anchor"></li>
+                                <li x-data="anchor">
+                                    <b x-text="name"></b>
+                                    (<small x-text="scale_position"></small>,
+                                    <small x-text="curve_position"></small>)
+
+                                </li>
                             </template>
                         </ul>
                     </div>
