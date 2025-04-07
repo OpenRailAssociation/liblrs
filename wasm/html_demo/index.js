@@ -185,6 +185,9 @@ async function file_selected(el) {
         let projection = lrs.lookup(clicked_point, lrm_id)[0];
 
         let window_lrms = window.Alpine.store('lrms')
+        if (window_lrms.lrm_id !== lrm_id) {
+            window_lrms.details(lrm_id, false)
+        }
 
         window_lrms.selectedFeature = curves_features[lrm_id];
         let offset = Math.round(projection.measure.scale_offset)
@@ -221,6 +224,7 @@ Alpine.store('lrms', {
     status: 'waiting',
     error_text: null,
     lrms: [],
+    lrm_id: null,
     lrs: null,
     filesize: null,
     filename: null,
@@ -255,15 +259,18 @@ Alpine.store('lrms', {
     get loaded() { return this.status == 'loaded' },
     get error() { return this.status == 'error' },
     get loading() { return this.status == 'loading' },
-    details(id) {
+    details(id, zoom = true) {
         this.unselect()
+        this.lrm_id = id
         this.selectedFeature = this.lrms[id];
 
         map.setFeatureState(
             { source: 'lrms', id },
             { hover: true }
         )
-        map.fitBounds(this.lrms[id].bbox, { padding: 40 })
+        if (zoom) {
+            map.fitBounds(this.lrms[id].bbox, { padding: 40 })
+        }
         const lrm_id = this.lrms[id].properties.id
 
 
