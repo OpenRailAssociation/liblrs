@@ -17,17 +17,19 @@ async function file_selected(el) {
 
     const curves_features = []
     const anchors_features = []
-    for (let i = 0; i < lrs.lrm_len(); i++) {
-        const anchors = lrs.get_anchors(i);
-        const lrm_id = lrs.get_lrm_scale_id(i);
-        const geom = lrs.get_lrm_geom(i);
+    for (let lrm_index = 0; lrm_index < lrs.lrm_len(); lrm_index++) {
+        const anchors = lrs.get_anchors(lrm_index)
+        const lrm_id = lrs.get_lrm_scale_id(lrm_index);
+        const geom = lrs.get_lrm_geom(lrm_index);
         const feature = turf.lineString(geom.map(p => [p.x, p.y]), { id: lrm_id, anchors }, {
-            id: i,
+            id: lrm_index,
         });
         feature.bbox = Bbox(feature)
         curves_features.push(feature);
 
-        for (const anchor of anchors) {
+        for (let anchor_index = 0; anchor_index < anchors.length; anchor_index++) {
+            const anchor = anchors[anchor_index];
+            anchor.properties = Object.fromEntries(lrs.anchor_properties(lrm_index, anchor_index))
             const properties = { id: anchor.name, lrm_id, curve: anchor.curve_position, scale: anchor.scale_position }
             if (anchor.position) {
                 anchors_features.push(turf.point([anchor.position.x, anchor.position.y], properties, { id: anchors_features.length }))
@@ -272,7 +274,6 @@ Alpine.store('lrms', {
             map.fitBounds(this.lrms[id].bbox, { padding: 40 })
         }
         const lrm_id = this.lrms[id].properties.id
-
 
         for (const anchor of this.anchors_features) {
             if (anchor.properties.lrm_id !== lrm_id) {
