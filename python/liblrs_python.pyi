@@ -110,6 +110,12 @@ class Builder:
         """
         ...
 
+    def id(self, node_index:int) -> str:
+        r"""
+        Get the id of a node identified by its index
+        """
+        ...
+
     def project(self, lrm_index:int, point:Point) -> typing.Optional[float]:
         r"""
         Project a point on a the curve of an lrm
