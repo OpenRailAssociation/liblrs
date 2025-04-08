@@ -37,6 +37,10 @@
         a:hover {
             text-decoration: underline;
         }
+
+        .anchor {
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -84,10 +88,20 @@
                         <p><small>(scale position, curve position)</small></p>
                         <ul>
                             <template x-for="anchor in selectedFeature.properties.anchors">
-                                <li>
+                                <li class="anchor" x-data="{details: false}" @click="details = ! details">
                                     <b x-text="anchor.name"></b>
                                     (<small x-text="anchor.scale_position"></small>,
                                     <small x-text="anchor.curve_position"></small>)
+                                    <div x-show="details">
+                                        <ul>
+                                            <template x-for="(value, key) in anchor.properties">
+                                                <li>
+                                                    <small><b x-text="key"></b>: <span x-text="value"></span></small>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
+
                                 </li>
                             </template>
                         </ul>
