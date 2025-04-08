@@ -495,6 +495,11 @@ impl Builder {
         self.inner.get_node_coord(node_index).into()
     }
 
+    /// Get the coordinates of a node identified by its index
+    pub fn get_node_id(&self, node_index: usize) -> String {
+        self.inner.get_node_id(node_index)
+    }
+
     /// Project a point on a the curve of an lrm
     ///
     /// Return a value between 0 and 1, both included

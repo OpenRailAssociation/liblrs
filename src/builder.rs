@@ -93,6 +93,8 @@ pub struct Builder<'fbb> {
     nodes_coords: Vec<Coord>,
     // Every node of a given traversal
     nodes_of_traversal: Vec<Vec<usize>>,
+    // Id of every node
+    nodes_ids: Vec<String>,
 
     // Final objects that will be in the binary file.
     nodes: Vec<WIPOffset<Node<'fbb>>>,
@@ -140,6 +142,7 @@ impl<'fbb> Builder<'fbb> {
         };
 
         self.nodes_coords.push(coord);
+        self.nodes_ids.push(id.to_owned());
         self.nodes.push(Node::create(&mut self.fbb, &args));
         self.nodes.len() - 1
     }
@@ -501,6 +504,11 @@ impl<'fbb> Builder<'fbb> {
     /// Returns the coordinates of a node
     pub fn get_node_coord(&self, node_index: usize) -> Coord {
         self.nodes_coords[node_index]
+    }
+
+    /// Returns the identifier of a node
+    pub fn get_node_id(&self, node_index: usize) -> String {
+        self.nodes_ids[node_index].clone()
     }
 
     /// Orient the traversal according to two points

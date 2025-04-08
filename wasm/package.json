@@ -21,7 +21,7 @@
         "text-encoding": "^0.7.0"
     },
     "name": "liblrs",
-    "version": "0.2.5",
+    "version": "0.2.6",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/OpenRailAssociation/liblrs.git"
