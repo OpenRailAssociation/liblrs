@@ -298,7 +298,7 @@ impl<'fbb> Builder<'fbb> {
                 AnchorPosition::Geographical(coord) => {
                     let projected = curve
                         .project(coord.into())
-                        .expect("could not projets anchor");
+                        .expect("could not project anchor");
                     let geometry = lrs_generated::Point::new(
                         projected.projected_coords.x(),
                         projected.projected_coords.y(),

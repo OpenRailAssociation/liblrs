@@ -215,7 +215,7 @@ maplibregl.addProtocol('pmtiles', protocol.tile);
 
 let map = new maplibregl.Map({
     container: 'map', // container id
-    style: process.env.MAPLIBRE_STYLE,
+    style: 'https://tuiles.enliberte.fr/styles/basic.json',
     center: [2.3469, 46.8589], // starting position [lng, lat]
     zoom: 5, // starting zoom,
 });
