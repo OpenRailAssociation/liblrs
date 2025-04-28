@@ -482,7 +482,7 @@ impl<'fbb> Builder<'fbb> {
     pub fn euclidean_distance(&self, lrm_index_a: usize, lrm_index_b: usize) -> f64 {
         let a = &self.temp_traversal[lrm_index_a].curve.geom;
         let b = &self.temp_traversal[lrm_index_b].curve.geom;
-        geo::Euclidean::distance(a, b)
+        geo::Euclidean.distance(a, b)
     }
 
     /// Returns the position along the curve of the traversal
