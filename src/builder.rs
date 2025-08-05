@@ -641,6 +641,8 @@ mod tests {
         };
         b.add_lrm("lrm", traversal, &[aol, aol2], properties!());
 
+        b.add_node("a", coord! {x:0., y:1.}, properties!("source" => "test"));
+
         let lrs = b.build_lrs(properties!()).unwrap();
         let lrm = lrs
             .resolve(
@@ -653,6 +655,9 @@ mod tests {
             .unwrap();
         assert_relative_eq!(lrm.x(), 0.);
         assert_relative_eq!(lrm.y(), 0.);
+
+        assert_eq!(lrs.lrs.nodes.len(), 1);
+        assert_eq!(lrs.lrs.nodes[0].properties["source"], "test");
     }
 
     #[test]
