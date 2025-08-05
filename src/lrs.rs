@@ -39,7 +39,7 @@ pub struct Lrm {
     pub properties: Properties,
 }
 
-/// A [`Traversal`] is path in the network that ends [`Curve`].
+/// A [`Traversal`] is a path in the network that ends [`Curve`].
 /// That [`Traversal`]s can be used for many different [`Lrm`]s.
 pub struct Traversal<CurveImpl: Curve> {
     /// Identifies this [`Traversal`].
