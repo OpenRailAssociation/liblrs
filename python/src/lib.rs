@@ -49,7 +49,7 @@ impl Point {
     }
 
     fn __repr__(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 
@@ -128,7 +128,7 @@ impl LrmScaleMeasure {
     }
 
     fn __repr__(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 
@@ -191,7 +191,7 @@ impl AnchorOnLrm {
     }
 
     fn __repr__(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 
@@ -226,7 +226,7 @@ pub struct Anchor {
 #[pymethods]
 impl Anchor {
     fn __repr__(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 }
 
