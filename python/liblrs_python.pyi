@@ -26,6 +26,27 @@ class AnchorOnLrm:
     def __new__(cls,anchor_index:int, distance_along_lrm:float): ...
     ...
 
+class Node:
+    r"""
+    A Node is a topological element of the [`Lrs`] that represents a intersection (or an extremity) of an [`Lrm`]
+    """
+    id: str
+    geometry: typing.Optional[Point]
+    properties: typing.Mapping[str, str]
+    ...
+
+class Segment:
+    r"""A segment is a topological element of the [`Lrs`] that represents a piece of the [`Curve`] of an [`Lrm`]
+
+
+    It has a start and end [`Node`].
+    """
+    id: str
+    start_node: int
+    end_node: int
+    properties: typing.Mapping[str, str]
+    ...
+
 class Builder:
     def __new__(cls,): ...
     def add_node(self, id:str, coord:Point, properties:typing.Mapping[str, str]) -> int:
@@ -242,6 +263,29 @@ class Lrs:
         """
         ...
 
+    def get_node(self, node_index:int) -> Node:
+        r"""
+        Return a single [`Node`]
+        """
+        ...
+
+    def get_nodes(self) -> list[Node]:
+        r"""
+        Return all the [`Node`] of the lrs
+        """
+        ...
+
+    def get_segment(self, node_index:int) -> Segment:
+        r"""
+        Return a single [`Segment`]
+        """
+        ...
+
+    def get_segments(self) -> list[Segment]:
+        r"""
+        Return all the [`Segment`] of the lrs
+        """
+        ...
 
 class Point:
     r"""
