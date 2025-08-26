@@ -1,3 +1,9 @@
+[project]
+name = "liblrs_python"
+version = "0.2.6"
+requires-python = ">=3.12"
+dependencies = ["pip>=25.2"]
+
 [build-system]
 requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
@@ -10,6 +16,9 @@ features = ["pyo3/extension-module"]
 # That is why we add it explicitely when using sdist
 include = [{ path = "liblrs_python.pyi", format = "sdist" }]
 # Avoid a collision with the README.md at the root of the directory
-exclude = [{path = "README.md", format = "sdist"}]
+exclude = [{ path = "README.md", format = "sdist" }]
 # Reduce the binary size (from 8.9 to 1.4 when tested)
 strip = true
+
+[dependency-groups]
+dev = ["pytest"]
