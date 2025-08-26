@@ -21,4 +21,4 @@ exclude = [{ path = "README.md", format = "sdist" }]
 strip = true
 
 [dependency-groups]
-dev = ["pytest"]
+dev = ["pytest", "maturin"]
