@@ -181,7 +181,7 @@ class Lrs:
 
     def get_lrm_scale_id(self, index:int) -> str:
         r"""
-         `id` of the [`LrmScale`].
+        `id` of the [`LrmScale`].
         """
         ...
 
