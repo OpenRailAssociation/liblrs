@@ -20,6 +20,8 @@ fn liblrs_python(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<LrmScaleMeasure>()?;
     m.add_class::<Anchor>()?;
     m.add_class::<Point>()?;
+    m.add_class::<Segment>()?;
+    m.add_class::<Node>()?;
     m.add_class::<AnchorOnLrm>()?;
     m.add_class::<SegmentOfTraversal>()?;
     m.add_class::<Builder>()?;
@@ -83,6 +85,62 @@ impl From<geo_types::Coord> for Point {
 impl From<Point> for geo_types::Coord {
     fn from(val: Point) -> Self {
         geo_types::Coord { x: val.x, y: val.y }
+    }
+}
+
+#[derive(Clone, Debug)]
+/// A Node is a topological element of the [`Lrs`] that represents a intersection (or an extremity) of an [`Lrm`]
+#[pyclass]
+pub struct Node {
+    /// Identifies this [`Node`].
+    #[pyo3(get, set)]
+    pub id: String,
+    /// Coordinates of the [`Node`]. They are in the same projection system (e.g. spherical or planar) as the [`Lrs`]
+    #[pyo3(get, set)]
+    pub geometry: Option<Point>,
+    /// Metadata to describe the [`Node`].
+    #[pyo3(get, set)]
+    pub properties: Properties,
+}
+
+impl From<&liblrs::lrs::Node> for Node {
+    fn from(value: &liblrs::lrs::Node) -> Self {
+        Self {
+            id: value.id.to_owned(),
+            geometry: value.geometry.map(|geom| geom.into()),
+            properties: value.properties.clone(),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+/// A segment is a topological element of the [`Lrs`] that represents a piece of the [`Curve`] of an [`Lrm`]
+///
+/// It has a start and end [`Node`].
+#[pyclass]
+pub struct Segment {
+    /// Identifies this [`Segment`]
+    #[pyo3(get, set)]
+    pub id: String,
+    /// Metadata to describe the [`Segment`]
+    #[pyo3(get, set)]
+    pub properties: Properties,
+    /// Start [`Node`]
+    #[pyo3(get, set)]
+    pub start_node: usize,
+    /// End [`Node`]
+    #[pyo3(get, set)]
+    pub end_node: usize,
+}
+
+impl From<&liblrs::lrs::Segment> for Segment {
+    fn from(value: &liblrs::lrs::Segment) -> Self {
+        Self {
+            id: value.id.to_owned(),
+            start_node: value.start_node.0,
+            end_node: value.end_node.0,
+            properties: value.properties.clone(),
+        }
     }
 }
 
@@ -355,6 +413,26 @@ impl Lrs {
     /// [`Properties`] for a given anchor
     pub fn anchor_properties(&self, lrm_index: usize, anchor_index: usize) -> Properties {
         self.lrs.anchor_properties(lrm_index, anchor_index).clone()
+    }
+
+    /// Return a single [`Node`]
+    pub fn get_node(&self, node_index: usize) -> Node {
+        (&self.lrs.lrs.nodes[node_index]).into()
+    }
+
+    /// Return all the [`Node`] of the lrs
+    pub fn get_nodes(&self) -> Vec<Node> {
+        self.lrs.lrs.nodes.iter().map(|node| node.into()).collect()
+    }
+
+    /// Return a single [`Segment`]
+    pub fn get_segment(&self, segment_index: usize) -> Segment {
+        (&self.lrs.lrs.segments[segment_index]).into()
+    }
+
+    /// All the [`Segment`] of the lrs
+    pub fn get_segments(&self) -> Vec<Segment> {
+        self.lrs.lrs.segments.iter().map(|seg| seg.into()).collect()
     }
 }
 

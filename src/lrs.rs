@@ -26,6 +26,10 @@ pub struct LrmHandle(pub usize);
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraversalHandle(pub usize);
 
+/// Used as handle to identify a [`Node`] within a specific [`Lrs`].
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+pub struct NodeHandle(pub usize);
+
 /// Represents an Linear Reference Method (LRM).
 /// It is the combination of one (or more) [`Traversal`]s for one [`LrmScale`].
 pub struct Lrm {
@@ -59,6 +63,37 @@ pub struct Lrs<CurveImpl: Curve> {
     pub traversals: Vec<Traversal<CurveImpl>>,
     /// Metadata to describe the Lrs
     pub properties: Properties,
+    /// All the [`Node`] of this Lrs
+    pub nodes: Vec<Node>,
+    /// All the [`Segment`] of this Lrs
+    pub segments: Vec<Segment>,
+}
+
+/// A Node is a topological element of the [`Lrs`] that represents a intersection (or an extremity) of an [`Lrm`]
+///
+/// On a road network, it would be an intersection or on a railway network a switch.
+/// This can be useful to build a graph.
+pub struct Node {
+    /// Identifies this [`Node`].
+    pub id: String,
+    /// Coordinates of the [`Node`]. They are in the same projection system (e.g. spherical or planar) as the [`Lrs`]
+    pub geometry: Option<Point>,
+    /// Metadata to describe the [`Node`].
+    pub properties: Properties,
+}
+
+/// A segment is a topological element of the [`Lrs`] that represents a piece of the [`Curve`] of an [`Lrm`]
+///
+/// It has a start and end [`Node`].
+pub struct Segment {
+    /// Identifies this [`Segment`]
+    pub id: String,
+    /// Metadata to describe the [`Segment`]
+    pub properties: Properties,
+    /// Start [`Node`]
+    pub start_node: NodeHandle,
+    /// End [`Node`]
+    pub end_node: NodeHandle,
 }
 
 /// The result of a projection onto an [`LrmScale`].
@@ -164,6 +199,8 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
             lrms: vec![],
             traversals: vec![],
             properties: from_fb(lrs.properties()),
+            nodes: vec![],
+            segments: vec![],
         };
 
         let source_anchors = lrs
@@ -263,6 +300,28 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
             };
 
             result.lrms.push(lrm);
+        }
+
+        for raw_node in lrs.nodes().unwrap_or_default().iter() {
+            result.nodes.push(Node {
+                id: raw_node.id().to_owned(),
+                geometry: raw_node.geometry().map(|geom| {
+                    point! {
+                        x: geom.x(),
+                        y: geom.y(),
+                    }
+                }),
+                properties: from_fb(raw_node.properties()),
+            });
+        }
+
+        for raw_segment in lrs.segments().unwrap_or_default().iter() {
+            result.segments.push(Segment {
+                id: raw_segment.id().to_owned(),
+                properties: from_fb(raw_segment.properties()),
+                start_node: NodeHandle(raw_segment.start_node_index() as usize),
+                end_node: NodeHandle(raw_segment.end_node_index() as usize),
+            })
         }
         Ok(result)
     }
@@ -684,6 +743,8 @@ mod tests {
             lrms: vec![lrm, lrm2],
             traversals: vec![traversal, traversal2],
             properties: properties!("source" => "test"),
+            nodes: vec![],
+            segments: vec![],
         }
     }
 
