@@ -2,6 +2,7 @@
 #[allow(clippy::all)]
 #[allow(dead_code)]
 #[allow(mismatched_lifetime_syntaxes)]
+#[allow(unsafe_op_in_unsafe_fn)]
 #[rustfmt::skip]
 mod lrs_generated;
 
