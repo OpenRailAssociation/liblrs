@@ -7,8 +7,8 @@
 use geo::kernels::RobustKernel;
 use geo::line_measures::{Densifiable, LengthMeasurable};
 use geo::prelude::*;
-use geo::{coord, Line, LineString, Point, Rect};
-use num_traits::{float::Float, One, Zero};
+use geo::{Line, LineString, Point, Rect, coord};
+use num_traits::{One, Zero, float::Float};
 use thiserror::Error;
 
 /// A [`Curve`] is the fundamental building block for an LRM.
@@ -841,9 +841,11 @@ mod tests {
             SphericalLineStringCurve::new(line_string![PARIS, REYKJAVIK, NEW_YORK], 1.);
 
         let segment = Line::new(coord! {x: -70.78, y: 47.84}, coord! {x: 9.29, y: 54.83});
-        assert!(paris_to_reykjavik_to_new_york
-            .intersect_segment(segment)
-            .is_some());
+        assert!(
+            paris_to_reykjavik_to_new_york
+                .intersect_segment(segment)
+                .is_some()
+        );
     }
 
     #[test]

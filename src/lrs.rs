@@ -17,7 +17,7 @@ use crate::lrm_scale::{
     Anchor, CurvePosition, LrmScale, LrmScaleError, LrmScaleMeasure, ScalePosition,
 };
 use crate::lrs_generated;
-use geo::{coord, point, LineString, Point};
+use geo::{LineString, Point, coord, point};
 
 /// Used as handle to identify a [`LrmScale`] within a specific [`Lrs`].
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
