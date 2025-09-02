@@ -1,6 +1,6 @@
 [project]
 name = "liblrs_python"
-version = "0.2.6"
+version = "0.3.0"
 requires-python = ">=3.12"
 dependencies = ["pip>=25.2"]
 
