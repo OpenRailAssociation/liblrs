@@ -381,8 +381,17 @@ impl<'fbb> Builder<'fbb> {
 
     /// Return the binary data.
     pub fn build_data(&mut self, properties: Properties) -> &[u8] {
+        use geo_index::rtree::RTreeBuilder;
+        use geo_index::rtree::sort::HilbertSort;
+
         let segments = self.build_segments();
         let traversals = self.build_traversals();
+
+        let mut rtree_builder = RTreeBuilder::<f64>::new(traversals.len() as u32);
+        for traversal in &self.temp_traversal {
+            rtree_builder.add_rect(&traversal.curve.bbox());
+        }
+        let tree = rtree_builder.finish::<HilbertSort>();
 
         let lrs_args = LrsArgs {
             properties: self.build_properties(properties),
