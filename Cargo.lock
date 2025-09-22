@@ -120,6 +120,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1628fb46dfa0b37568d12e5edd512553eccf6a22a78e8bde00bb4aed84d5bdbf"
 
 [[package]]
+name = "bytemuck"
+version = "1.23.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3995eaeebcdf32f91f980d360f78732ddc061097ab4e39991ae7a6ace9194677"
+
+[[package]]
 name = "byteorder"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -353,6 +359,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "geo-index"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "601f128f13b9f1fb11cd1038f5374cac921e03fb475744069a889cd4cf4e0bb2"
+dependencies = [
+ "bytemuck",
+ "float_next_after",
+ "geo-traits",
+ "num-traits",
+ "thiserror 1.0.69",
+ "tinyvec",
+]
+
+[[package]]
+name = "geo-traits"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e7c353d12a704ccfab1ba8bfb1a7fe6cb18b665bf89d37f4f7890edcd260206"
+dependencies = [
+ "geo-types",
+]
+
+[[package]]
 name = "geo-types"
 version = "0.7.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -544,6 +573,7 @@ dependencies = [
  "clap",
  "flatbuffers",
  "geo",
+ "geo-index",
  "getrandom",
  "num-traits",
  "osm4routing",
@@ -1114,6 +1144,21 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "tinyvec"
+version = "1.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bfa5fdc3bce6191a1dbc8c02d5c8bffcf557bafa17c124c5264a458f1b0613fa"
+dependencies = [
+ "tinyvec_macros",
+]
+
+[[package]]
+name = "tinyvec_macros"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "unicode-ident"
