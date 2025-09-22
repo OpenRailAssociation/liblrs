@@ -401,6 +401,7 @@ impl<'fbb> Builder<'fbb> {
             anchors: Some(self.fbb.create_vector(&self.anchors)),
             linear_referencing_methods: Some(self.fbb.create_vector(&self.lrms)),
             geometry_type: GeometryType::Geographic,
+            lrm_spatial_index: Some(self.fbb.create_vector(&tree.into_inner())),
         };
 
         let lrs = Lrs::create(&mut self.fbb, &lrs_args);
