@@ -65,6 +65,8 @@ pub struct Lrs<CurveImpl: Curve> {
     pub nodes: Vec<Node>,
     /// All the [`Segment`] of this Lrs
     pub segments: Vec<Segment>,
+    /// An RTree spatial index of the LRM extents
+    rtree_data: Option<Vec<u8>>,
 }
 
 /// A Node is a topological element of the [`Lrs`] that represents a intersection (or an extremity) of an [`Lrm`]
@@ -223,12 +225,16 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
     pub fn from_bytes(buf: &[u8]) -> Result<Self, LrsError> {
         let lrs = lrs_generated::root_as_lrs(buf).map_err(LrsError::InvalidArchive)?;
 
+        let rtree_data = lrs
+            .lrm_spatial_index()
+            .map(|buffer| buffer.bytes().to_vec());
         let mut result = Self {
             lrms: vec![],
             traversals: vec![],
             properties: from_fb(lrs.properties()),
             nodes: vec![],
             segments: vec![],
+            rtree_data,
         };
 
         let source_anchors = lrs
@@ -710,6 +716,7 @@ mod tests {
             properties: properties!("source" => "test"),
             nodes: vec![],
             segments: vec![],
+            rtree_data: None,
         }
     }
 
