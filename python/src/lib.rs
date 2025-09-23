@@ -288,9 +288,27 @@ impl Anchor {
     }
 }
 
+impl From<&liblrs::lrm_scale::Anchor> for Anchor {
+    fn from(value: &liblrs::lrm_scale::Anchor) -> Self {
+        let name = match value {
+            liblrs::lrm_scale::Anchor::Named(value) => value.name.clone(),
+            liblrs::lrm_scale::Anchor::Unnamed(_) => "-".to_owned(),
+        };
+        Self {
+            name,
+            position: value.point().map(|p| p.into()),
+            curve_position: value.curve_position(),
+            scale_position: value.scale_position(),
+        }
+    }
+}
+
 #[pyclass]
 /// The result of a projection onto an [`LrmScale`].
 pub struct LrmProjection {
+    #[pyo3(get, set)]
+    /// Handle of the [`Lrm`] where this measurement applies to
+    lrm_handle: usize,
     /// Contains `measure` ([`LrmScaleMeasure`]) and `lrm` ([`LrmHandle`]).
     #[pyo3(get, set)]
     pub measure: LrmScaleMeasure,
@@ -299,18 +317,15 @@ pub struct LrmProjection {
     pub orthogonal_offset: f64,
 }
 
-impl From<&liblrs::lrm_scale::Anchor> for Anchor {
-    fn from(value: &liblrs::lrm_scale::Anchor) -> Self {
-        let name = match value {
-            liblrs::lrm_scale::Anchor::Named(value) => value.name.clone(),
-            liblrs::lrm_scale::Anchor::Unnamed(_) => "-".to_owned(),
-        };
-
+impl From<&liblrs::lrs::LrmProjection> for LrmProjection {
+    fn from(value: &liblrs::lrs::LrmProjection) -> Self {
         Self {
-            name,
-            position: value.point().map(|p| p.into()),
-            curve_position: value.curve_position(),
-            scale_position: value.scale_position(),
+            lrm_handle: value.measure.lrm.0,
+            measure: LrmScaleMeasure {
+                anchor_name: value.measure.measure.anchor_name.to_owned(),
+                scale_offset: value.measure.measure.scale_offset,
+            },
+            orthogonal_offset: value.orthogonal_offset,
         }
     }
 }
@@ -395,13 +410,19 @@ impl Lrs {
             .lrs
             .lookup(point.into(), LrmHandle(lrm_handle))
             .iter()
-            .map(|p| LrmProjection {
-                measure: LrmScaleMeasure {
-                    anchor_name: p.measure.measure.anchor_name.to_owned(),
-                    scale_offset: p.measure.measure.scale_offset,
-                },
-                orthogonal_offset: p.orthogonal_offset,
-            })
+            .map(LrmProjection::from)
+            .collect()
+    }
+
+    /// Projects a [`Point`] on all applicable [`Traversal`]s nearby.
+    /// The [`Point`] must be in the bounding box of the [`Curve`] of the [`Traversal`].
+    /// The result is sorted by `orthogonal_offset`: the nearest [`Lrm`] to the [`Point`] is the first item.
+    fn lookup_lrms(&self, point: Point) -> Vec<LrmProjection> {
+        self.lrs
+            .lrs
+            .lookup_lrms(point.into())
+            .iter()
+            .map(LrmProjection::from)
             .collect()
     }
 

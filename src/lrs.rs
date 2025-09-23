@@ -10,6 +10,7 @@ use std::cmp::Ordering;
 
 use flatbuffers::{ForwardsUOffset, Vector};
 use geo::orient::Direction;
+use geo_index::rtree::{RTreeIndex, RTreeRef};
 use thiserror::Error;
 
 use crate::curves::{Curve, CurveError};
@@ -17,7 +18,7 @@ use crate::lrm_scale::{
     Anchor, CurvePosition, LrmScale, LrmScaleError, LrmScaleMeasure, ScalePosition,
 };
 use crate::lrs_generated;
-use geo::{LineString, Point, coord, point};
+use geo::{Contains, LineString, Point, coord, point};
 
 /// Used as handle to identify a [`LrmScale`] within a specific [`Lrs`].
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
@@ -66,7 +67,7 @@ pub struct Lrs<CurveImpl: Curve> {
     /// All the [`Segment`] of this Lrs
     pub segments: Vec<Segment>,
     /// An RTree spatial index of the LRM extents
-    rtree_data: Option<Vec<u8>>,
+    pub rtree_data: Option<Vec<u8>>,
 }
 
 /// A Node is a topological element of the [`Lrs`] that represents a intersection (or an extremity) of an [`Lrm`]
@@ -400,6 +401,10 @@ pub trait LrsBase {
     /// Projects a [`Point`] on all [`Lrm`] where the [`Point`] is in the bounding box.
     /// The result is sorted by `orthogonal_offset`: the nearest [`Lrm`] to the [`Point`] is the first item.
     fn lookup_lrms(&self, point: Point) -> Vec<LrmProjection>;
+    /// Returns all the traversals whose bounding box include the given point
+    ///
+    /// The function will use the spatial index if it is defined
+    fn traversals_containing(&self, point: Point) -> Vec<TraversalHandle>;
 
     /// Given a [`TraversalPosition`], returns it geographical position ([`Point`]).
     fn locate_traversal(&self, position: TraversalPosition) -> Result<Point, LrsError>;
@@ -482,12 +487,37 @@ impl<CurveImpl: Curve> LrsBase for Lrs<CurveImpl> {
         })
     }
 
+    fn traversals_containing(&self, point: Point) -> Vec<TraversalHandle> {
+        let rtree = self
+            .rtree_data
+            .as_ref()
+            .and_then(|buf| RTreeRef::try_new(buf).ok());
+
+        rtree
+            .map(|tree| {
+                // The rectangles inserted in the rtree are already expanded by the margin
+                // That is why the min and max values are the same.
+                tree.search(point.x(), point.y(), point.x(), point.y())
+                    .iter()
+                    .map(|idx| TraversalHandle(*idx as usize))
+                    .collect()
+            })
+            .unwrap_or(
+                self.traversals
+                    .iter()
+                    .enumerate()
+                    .filter(|(_idx, traversal)| traversal.curve.bbox().contains(&point))
+                    .map(|(idx, _traversal)| TraversalHandle(idx))
+                    .collect(),
+            )
+    }
+
     fn lookup_lrms(&self, point: Point) -> Vec<LrmProjection> {
         let mut result: Vec<_> = self
-            .lrms
+            .traversals_containing(point)
             .iter()
-            .enumerate()
-            .flat_map(|(lrm_idx, _lrm)| self.lookup(point, LrmHandle(lrm_idx)))
+            .flat_map(|traversal_handle| &self.traversals[traversal_handle.0].lrms)
+            .flat_map(|&lrm_handle| self.lookup(point, lrm_handle))
             .collect();
         result.sort_by(|a, b| {
             a.orthogonal_offset

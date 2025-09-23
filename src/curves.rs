@@ -16,6 +16,11 @@ use thiserror::Error;
 /// A [`Curve`] can be part of a larger [`Curve`] (e.g. for optimisation purposes and to have better bounding boxes).
 /// The [`Curve`] can be implemented.
 pub trait Curve {
+    /// Is the curve represented in spherical coordinates (like longitude;latitude)
+    ///
+    /// This has an influence on how to compute distances and bearings
+    const IS_SPHERICAL: bool;
+
     /// Builds a new [`Curve`] from a [`LineString`].
     /// `max_extent` is the maximum distance that is considered to be “on the curve”.
     /// `max_extent` plays a role in the bounding box.
@@ -101,6 +106,8 @@ pub struct PlanarLineStringCurve {
 }
 
 impl Curve for PlanarLineStringCurve {
+    const IS_SPHERICAL: bool = false;
+
     fn new(geom: LineString, max_extent: f64) -> Self {
         let length = geom.length(&Euclidean);
         Self {
@@ -357,6 +364,8 @@ impl SphericalLineStringCurve {
 }
 
 impl Curve for SphericalLineStringCurve {
+    const IS_SPHERICAL: bool = true;
+
     fn new(geom: LineString, max_extent: f64) -> Self {
         let length = geom.length(&Geodesic);
         Self {
