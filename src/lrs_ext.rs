@@ -4,11 +4,8 @@
 use geo::{Coord, Point};
 
 use crate::curves::{Curve, SphericalLineStringCurve};
-use crate::lrm_scale::Anchor;
-use crate::lrm_scale::LrmScaleMeasure;
-use crate::lrs::Properties;
-use crate::lrs::{self, TraversalPosition};
-use crate::lrs::{LrsBase, LrsError};
+use crate::lrm_scale::{Anchor, LrmScaleMeasure};
+use crate::lrs::{self, LrmProjection, LrsBase, LrsError, Properties, TraversalPosition};
 
 type Lrs = lrs::Lrs<SphericalLineStringCurve>;
 
@@ -100,5 +97,73 @@ impl ExtLrs {
     /// [`Properties`] for a given anchor
     pub fn anchor_properties(&self, lrm_index: usize, anchor_index: usize) -> &Properties {
         self.lrs.lrms[lrm_index].scale.anchors[anchor_index].properties()
+    }
+
+    /// Projects a [`Point`] on all [`Lrm`] where the [`Point`] is in the bounding box.
+    /// The result is sorted by `orthogonal_offset`: the nearest [`Lrm`] to the [`Point`] is the first item.
+    pub fn lookup_lrms(&self, point: Point) -> Vec<LrmProjection> {
+        self.lrs.lookup_lrms(point)
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use geo::{Coord, coord, point};
+
+    use crate::builder::{AnchorOnLrm, Builder, SegmentOfTraversal};
+    use crate::{lrs, properties};
+
+    fn build_lrm(builder: &mut Builder, name: &str, coords: &[Coord]) {
+        let segment_index = builder.add_segment("name", coords, 0, 1);
+        let sot = SegmentOfTraversal {
+            segment_index,
+            reversed: false,
+        };
+        let traversal_index = builder.add_traversal(name, &[sot]);
+        let start_anchor = AnchorOnLrm {
+            anchor_index: builder.add_anchor("start", Some("start"), coords[0], properties!()),
+            distance_along_lrm: 0.0,
+        };
+        let end_anchor = AnchorOnLrm {
+            anchor_index: builder.add_anchor(
+                "end",
+                Some("end"),
+                *coords.last().unwrap(),
+                properties!(),
+            ),
+            distance_along_lrm: 1.0,
+        };
+        builder.add_lrm(
+            name,
+            traversal_index,
+            &[start_anchor, end_anchor],
+            properties!(),
+        );
+    }
+
+    #[test]
+    fn test() {
+        let mut b = Builder::new();
+        build_lrm(&mut b, "lrm1", &[coord! {x:0., y:0.}, coord! {x:2., y:0.}]);
+        build_lrm(&mut b, "lrm2", &[coord! {x:0., y:1.}, coord! {x:2., y:1.}]);
+        build_lrm(&mut b, "lrm3", &[coord! {x:1., y:1.}, coord! {x:1., y:-1.}]);
+        let lrs = b.build_lrs(properties!()).unwrap();
+
+        let nearest0 = lrs.lookup_lrms(point! {x: 1.0001, y:0.0});
+        assert_eq!(nearest0.len(), 2);
+        assert_eq!(nearest0[0].measure.lrm, lrs::LrmHandle(0));
+        assert_eq!(nearest0[1].measure.lrm, lrs::LrmHandle(2));
+
+        let nearest1 = lrs.lookup_lrms(point! {x: 0.5, y:1.0});
+        assert_eq!(nearest1.len(), 1);
+        assert_eq!(nearest1[0].measure.lrm, lrs::LrmHandle(1));
+
+        let nearest2 = lrs.lookup_lrms(point! {x:1., y:-0.0001});
+        assert_eq!(nearest2.len(), 2);
+        assert_eq!(nearest2[0].measure.lrm, lrs::LrmHandle(2));
+        assert_eq!(nearest2[1].measure.lrm, lrs::LrmHandle(0));
+
+        let nearest3 = lrs.lookup_lrms(point! {x:2.35, y:48.98});
+        assert!(nearest3.is_empty());
     }
 }

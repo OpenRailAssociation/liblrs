@@ -65,6 +65,7 @@ struct TempTraversal {
     id: String,
     curve: SphericalLineStringCurve,
     segments: Vec<SegmentOfTraversal>,
+    lrms: Vec<usize>,
 }
 
 impl TempTraversal {
@@ -248,6 +249,7 @@ impl<'fbb> Builder<'fbb> {
             id: traversal_id.to_owned(),
             curve: SphericalLineStringCurve::new(geo::LineString::new(coords), 100.),
             segments: segments.to_vec(),
+            lrms: vec![],
         });
         self.nodes_of_traversal.push(nodes_of_traversal);
 
@@ -279,6 +281,9 @@ impl<'fbb> Builder<'fbb> {
             projected_anchors: Some(self.project_anchors(&anchors, traversal_index)),
             ..Default::default()
         };
+        self.temp_traversal[traversal_index]
+            .lrms
+            .push(self.lrms.len());
         self.lrms
             .push(LinearReferencingMethod::create(&mut self.fbb, &args));
     }
@@ -544,14 +549,14 @@ impl<'fbb> Builder<'fbb> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use crate::lrm_scale::LrmScaleMeasure;
 
     use super::*;
     use approx::assert_relative_eq;
     use geo::{coord, point};
 
-    fn build_traversal(builder: &mut Builder) -> usize {
+    pub fn build_traversal(builder: &mut Builder) -> usize {
         let s1 = builder.add_segment("s1", &[coord! {x: 0., y: 0.}, coord! {x:1., y: 0.}], 0, 1);
         let s2 = builder.add_segment("s2", &[coord! {x: 1., y: 0.}, coord! {x:2., y: 0.}], 1, 2);
         let sot1 = super::SegmentOfTraversal {
