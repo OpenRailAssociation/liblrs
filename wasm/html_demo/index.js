@@ -193,7 +193,8 @@ async function file_selected(el) {
 
         window_lrms.selectedFeature = curves_features[lrm_id];
         let offset = Math.round(projection.measure.scale_offset)
-        window_lrms.pkStart = projection.measure.anchor_name + '+' + String(offset).padStart(3, "0");
+        const offset_sign = offset >= 0 ? '+' : '-';
+        window_lrms.pkStart = projection.measure.anchor_name + offset_sign + String(Math.abs(offset)).padStart(3, "0");
 
         window_lrms.startMeasure = projection.measure;
         let point = lrs.resolve(lrm_id, projection.measure)
