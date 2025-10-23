@@ -216,7 +216,7 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
                     .get(segment.segment_index() as usize)
                     .geometry()
                     .iter()
-                    .map(|p| (coord! {x: p.x(),y: p.y()}))
+                    .map(|p| coord! {x: p.x(),y: p.y()})
                     .collect();
                 if segment.direction() == lrs_generated::Direction::Decreasing {
                     geom.reverse();
