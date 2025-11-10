@@ -383,9 +383,6 @@ pub trait LrsBase {
     /// Projects a [`Point`] on all [`Lrm`] where the [`Point`] is in the bounding box.
     /// The result is sorted by `orthogonal_offset`: the nearest [`Lrm`] to the [`Point`] is the first item.
     fn lookup_lrms(&self, point: Point) -> Vec<LrmProjection>;
-    /// Projects a [`Point`] on all [`Traversal`]s where the [`Point`] is in the bounding box.
-    /// The result is sorted by `orthogonal_offset`: the nearest [`Lrm`] to the [`Point`] is the first item.
-    fn lookup_traversals(&self, point: Point) -> Vec<TraversalProjection>;
 
     /// Given a [`TraversalPosition`], returns it geographical position ([`Point`]).
     fn locate_traversal(&self, position: TraversalPosition) -> Result<Point, LrsError>;
@@ -491,26 +488,6 @@ impl<CurveImpl: Curve> LrsBase for Lrs<CurveImpl> {
             .iter()
             .enumerate()
             .flat_map(|(lrm_idx, _lrm)| self.lookup(point, LrmHandle(lrm_idx)))
-            .collect();
-        result.sort_by(|a, b| {
-            a.orthogonal_offset
-                .partial_cmp(&b.orthogonal_offset)
-                .unwrap_or(Ordering::Equal)
-        });
-        result
-    }
-
-    fn lookup_traversals(&self, point: Point) -> Vec<TraversalProjection> {
-        let mut result: Vec<_> = self
-            .traversals
-            .iter()
-            .enumerate()
-            .flat_map(|(idx, traversal)| traversal.curve.project(point).map(|proj| (idx, proj)))
-            .map(|(idx, proj)| TraversalProjection {
-                traversal: TraversalHandle(idx),
-                orthogonal_offset: proj.offset,
-                distance_from_start: proj.distance_along_curve,
-            })
             .collect();
         result.sort_by(|a, b| {
             a.orthogonal_offset
@@ -796,12 +773,6 @@ mod tests {
         assert_eq!(result[1].measure.measure.scale_offset, 5.);
         assert_eq!(result[2].orthogonal_offset, 1.5);
         assert_eq!(result[2].measure.measure.scale_offset, 5.);
-    }
-
-    #[test]
-    fn lookup_traversals() {
-        let result = lrs().lookup_traversals(point! {x: 50., y:0.5});
-        assert_eq!(result.len(), 2);
     }
 
     #[test]
