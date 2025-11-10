@@ -35,10 +35,8 @@ pub struct NodeHandle(pub usize);
 pub struct Lrm {
     /// The scale of this [`Lrm`].
     pub scale: LrmScale,
-    /// The [`Traversal`] that is the reference of this [`Lrm`].
-    pub reference_traversal: TraversalHandle,
-    /// All the [`Traversal`]s where this [`Lrm`] applies.
-    pub traversals: Vec<TraversalHandle>,
+    /// The [`Traversal`] that where this [`Lrm`] applies.
+    pub traversal: TraversalHandle,
     /// Metadata to describe the Lrm
     pub properties: Properties,
 }
@@ -240,12 +238,12 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
             .iter()
             .enumerate()
         {
-            let reference_traversal_idx = raw_lrm.traversal_index() as usize;
+            let traversal_idx = raw_lrm.traversal_index() as usize;
             let curve = &result
                 .traversals
-                .get(reference_traversal_idx)
+                .get(traversal_idx)
                 .ok_or(LrsError::IncompleteArchive(format!(
-                    "traversal {reference_traversal_idx} from lrm {lrm_idx}"
+                    "traversal {traversal_idx} from lrm {lrm_idx}"
                 )))?
                 .curve;
 
@@ -294,10 +292,13 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
                     id: raw_lrm.id().to_owned(),
                     anchors,
                 },
-                reference_traversal: TraversalHandle(reference_traversal_idx),
-                traversals: vec![TraversalHandle(reference_traversal_idx)],
+                traversal: TraversalHandle(traversal_idx),
                 properties: from_fb(raw_lrm.properties()),
             };
+
+            result.traversals[traversal_idx]
+                .lrms
+                .push(LrmHandle(lrm_idx));
 
             result.lrms.push(lrm);
         }
@@ -376,10 +377,9 @@ pub trait LrsBase {
     /// it will be segmentized as a [`LineString`] and might not be as acurate as the underlying representation
     fn get_linestring(&self, traversal: TraversalHandle) -> Result<LineString, LrsError>;
 
-    /// Projects a [`Point`] on all applicable [`Traversal`]s to a given [`Lrm`].
+    /// Projects a [`Point`] on the [`Traversal`]s to a given [`Lrm`].
     /// The [`Point`] must be in the bounding box of the [`Curve`] of the [`Traversal`].
-    /// The result is sorted by `orthogonal_offset`: the nearest [`Lrm`] to the [`Point`] is the first item.
-    fn lookup(&self, point: Point, lrm: LrmHandle) -> Vec<LrmProjection>;
+    fn lookup(&self, point: Point, lrm: LrmHandle) -> Result<LrmProjection, LrsError>;
     /// Projects a [`Point`] on all [`Lrm`] where the [`Point`] is in the bounding box.
     /// The result is sorted by `orthogonal_offset`: the nearest [`Lrm`] to the [`Point`] is the first item.
     fn lookup_lrms(&self, point: Point) -> Vec<LrmProjection>;
@@ -387,14 +387,8 @@ pub trait LrsBase {
     /// Given a [`TraversalPosition`], returns it geographical position ([`Point`]).
     fn locate_traversal(&self, position: TraversalPosition) -> Result<Point, LrsError>;
 
-    /// And [`Lrm`] can be used on many [`Traversal`]s.
-    /// For example, for both directions of a highway.
-    /// This method returns all applicable [`TraversalHandle`]s to that [`Traversal`].
-    fn get_lrm_applicable_traversals(&self, lrm: LrmHandle) -> &[TraversalHandle];
-    /// An [`Lrm`] has a reference [`Traversal`]
-    /// For example, for the centerline of a highway, or a specific track.
-    /// This methods returns the [`TraversalHandle`].
-    fn get_lrm_reference_traversal(&self, lrm: LrmHandle) -> TraversalHandle;
+    /// This methods returns the [`TraversalHandle`] of the [`Lrm`].
+    fn get_lrm_traversal(&self, lrm: LrmHandle) -> TraversalHandle;
 
     /// A [`Traversal`] can be use for multiple [`Lrm`]s.
     /// For example, a highway could have milestones referenced in `miles` AND `kilometers`.
@@ -457,29 +451,18 @@ impl<CurveImpl: Curve> LrsBase for Lrs<CurveImpl> {
             .map(TraversalHandle)
     }
 
-    fn lookup(&self, point: Point, lrm_handle: LrmHandle) -> Vec<LrmProjection> {
+    fn lookup(&self, point: Point, lrm_handle: LrmHandle) -> Result<LrmProjection, LrsError> {
         let lrm = &self.lrms[lrm_handle.0];
-        let mut result: Vec<_> = self
-            .get_lrm_applicable_traversals(lrm_handle)
-            .iter()
-            .flat_map(|t| self.traversals[t.0].curve.project(point))
-            .flat_map(|projection| {
-                let measure = lrm.scale.locate_anchor(projection.distance_along_curve)?;
-                Ok::<LrmProjection, LrsError>(LrmProjection {
-                    measure: LrmMeasure {
-                        lrm: lrm_handle,
-                        measure,
-                    },
-                    orthogonal_offset: projection.offset,
-                })
-            })
-            .collect();
-        result.sort_by(|a, b| {
-            a.orthogonal_offset
-                .partial_cmp(&b.orthogonal_offset)
-                .unwrap_or(Ordering::Equal)
-        });
-        result
+        let traversal = &self.traversals[lrm.traversal.0];
+        let projection = traversal.curve.project(point)?;
+        let measure = lrm.scale.locate_anchor(projection.distance_along_curve)?;
+        Ok(LrmProjection {
+            measure: LrmMeasure {
+                lrm: lrm_handle,
+                measure,
+            },
+            orthogonal_offset: projection.offset,
+        })
     }
 
     fn lookup_lrms(&self, point: Point) -> Vec<LrmProjection> {
@@ -503,12 +486,8 @@ impl<CurveImpl: Curve> LrsBase for Lrs<CurveImpl> {
             .resolve(position.curve_position)?)
     }
 
-    fn get_lrm_applicable_traversals(&self, lrm: LrmHandle) -> &[TraversalHandle] {
-        &self.lrms[lrm.0].traversals
-    }
-
-    fn get_lrm_reference_traversal(&self, lrm: LrmHandle) -> TraversalHandle {
-        self.lrms[lrm.0].reference_traversal
+    fn get_lrm_traversal(&self, lrm: LrmHandle) -> TraversalHandle {
+        self.lrms[lrm.0].traversal
     }
 
     fn get_traversal_lrms(&self, traversal: TraversalHandle) -> &[LrmHandle] {
@@ -702,16 +681,14 @@ mod tests {
         };
 
         let lrm = Lrm {
-            reference_traversal: TraversalHandle(0),
             scale: crate::lrm_scale::tests::scale(),
-            traversals: vec![TraversalHandle(0)],
+            traversal: TraversalHandle(0),
             properties: properties!("some key" => "some value"),
         };
 
         let mut lrm2 = Lrm {
-            reference_traversal: TraversalHandle(0),
+            traversal: TraversalHandle(1),
             scale: crate::lrm_scale::tests::scale(),
-            traversals: vec![TraversalHandle(0), TraversalHandle(1)],
             properties: properties!(),
         };
         "id2".clone_into(&mut lrm2.scale.id);
@@ -745,34 +722,34 @@ mod tests {
     #[test]
     fn lookup_single_lrm() {
         let lrs = lrs();
-        let result = lrs.lookup(point! {x: 50., y:0.5}, lrs.get_lrm("id").unwrap());
-        assert_eq!(result.len(), 1);
-        assert_eq!(result[0].orthogonal_offset, 0.5);
-        assert_eq!(result[0].measure.measure.scale_offset, 5.);
+        let result = lrs
+            .lookup(point! {x: 50., y:0.5}, lrs.get_lrm("id").unwrap())
+            .unwrap();
+        assert_eq!(result.orthogonal_offset, 0.5);
+        assert_eq!(result.measure.measure.scale_offset, 5.);
     }
 
     #[test]
     fn lookup_multiple_lrm() {
         let lrs = lrs();
-        let result = lrs.lookup(point! {x: 50., y:0.5}, lrs.get_lrm("id2").unwrap());
-        assert_eq!(result.len(), 2);
-        assert_eq!(result[0].orthogonal_offset, 0.5);
-        assert_eq!(result[0].measure.measure.scale_offset, 5.);
-        assert_eq!(result[0].measure.measure.anchor_name, "a");
-        assert_eq!(result[1].orthogonal_offset, 1.5);
-        assert_eq!(result[1].measure.measure.scale_offset, 5.);
+        let result = lrs
+            .lookup(point! {x: 50., y:0.5}, lrs.get_lrm("id2").unwrap())
+            .unwrap();
+        assert_eq!(result.orthogonal_offset, 1.5);
+        assert_eq!(result.measure.measure.scale_offset, 5.);
+        assert_eq!(result.measure.measure.anchor_name, "a");
+        assert_eq!(result.orthogonal_offset, 1.5);
+        assert_eq!(result.measure.measure.scale_offset, 5.);
     }
 
     #[test]
     fn lookup_lrms() {
         let result = lrs().lookup_lrms(point! {x: 50., y:0.5});
-        assert_eq!(result.len(), 3);
+        assert_eq!(result.len(), 2);
         assert_eq!(result[0].orthogonal_offset, 0.5);
         assert_eq!(result[0].measure.measure.scale_offset, 5.);
-        assert_eq!(result[1].orthogonal_offset, 0.5);
+        assert_eq!(result[1].orthogonal_offset, 1.5);
         assert_eq!(result[1].measure.measure.scale_offset, 5.);
-        assert_eq!(result[2].orthogonal_offset, 1.5);
-        assert_eq!(result[2].measure.measure.scale_offset, 5.);
     }
 
     #[test]
@@ -795,21 +772,11 @@ mod tests {
     }
 
     #[test]
-    fn get_lrm_applicable_traversals() {
-        let lrs = lrs();
-        let result = lrs.get_lrm_applicable_traversals(LrmHandle(0));
-        assert_eq!(result.len(), 1);
-
-        let result = lrs.get_lrm_applicable_traversals(LrmHandle(1));
-        assert_eq!(result.len(), 2);
-    }
-
-    #[test]
-    fn get_lrm_reference_traversal() {
-        let result = lrs().get_lrm_reference_traversal(LrmHandle(0));
+    fn get_lrm_traversal() {
+        let result = lrs().get_lrm_traversal(LrmHandle(0));
         assert_eq!(TraversalHandle(0), result);
-        let result = lrs().get_lrm_reference_traversal(LrmHandle(1));
-        assert_eq!(TraversalHandle(0), result);
+        let result = lrs().get_lrm_traversal(LrmHandle(1));
+        assert_eq!(TraversalHandle(1), result);
     }
 
     #[test]
