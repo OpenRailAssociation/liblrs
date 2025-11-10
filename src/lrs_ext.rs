@@ -35,7 +35,7 @@ impl ExtLrs {
     pub fn get_lrm_geom(&self, index: usize) -> Result<Vec<geo::Coord>, String> {
         let lrm = self.lrs.lrms.get(index).ok_or("Invalid index")?;
         self.lrs
-            .get_linestring(lrm.reference_traversal)
+            .get_linestring(lrm.traversal)
             .map_err(|err| err.to_string())
             .map(|linestring| linestring.0)
     }
@@ -57,7 +57,7 @@ impl ExtLrs {
 
         let traversal_position = TraversalPosition {
             curve_position,
-            traversal: lrm.reference_traversal,
+            traversal: lrm.traversal,
         };
         self.lrs.locate_traversal(traversal_position)
     }
@@ -71,7 +71,7 @@ impl ExtLrs {
     ) -> Result<Vec<Coord>, String> {
         let lrm = &self.lrs.lrms[lrm_index];
         let scale = &lrm.scale;
-        let curve = &self.lrs.traversals[lrm.reference_traversal.0].curve;
+        let curve = &self.lrs.traversals[lrm.traversal.0].curve;
         let from = scale
             .locate_point(from)
             .map_err(|e| e.to_string())?
