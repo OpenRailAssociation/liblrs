@@ -80,6 +80,25 @@ pub struct Node {
     pub properties: Properties,
 }
 
+impl From<&lrs_generated::Point> for Point {
+    fn from(fb_point: &lrs_generated::Point) -> Self {
+        point! {
+            x: fb_point.x(),
+            y: fb_point.y(),
+        }
+    }
+}
+
+impl From<lrs_generated::Node<'_>> for Node {
+    fn from(fb_node: lrs_generated::Node) -> Self {
+        Self {
+            id: fb_node.id().to_owned(),
+            geometry: fb_node.geometry().map(Point::from),
+            properties: from_fb(fb_node.properties()),
+        }
+    }
+}
+
 /// A segment is a topological element of the [`Lrs`] that represents a piece of the [`Curve`] of an [`Lrm`]
 ///
 /// It has a start and end [`Node`].
@@ -92,6 +111,17 @@ pub struct Segment {
     pub start_node: NodeHandle,
     /// End [`Node`]
     pub end_node: NodeHandle,
+}
+
+impl From<lrs_generated::Segment<'_>> for Segment {
+    fn from(fb_segment: lrs_generated::Segment) -> Self {
+        Self {
+            id: fb_segment.id().to_owned(),
+            properties: from_fb(fb_segment.properties()),
+            start_node: NodeHandle(fb_segment.start_node_index() as usize),
+            end_node: NodeHandle(fb_segment.end_node_index() as usize),
+        }
+    }
 }
 
 /// The result of a projection onto an [`LrmScale`].
@@ -259,12 +289,7 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
                         .projected_anchors()
                         .map(|anchors| {
                             let projected_anchor = anchors.get(idx);
-                            let geometry = projected_anchor.geometry().map(|geom| {
-                                point! {
-                                    x: geom.x(),
-                                    y: geom.y(),
-                                }
-                            });
+                            let geometry = projected_anchor.geometry().map(Point::from);
                             (projected_anchor.distance_along_curve(), geometry)
                         })
                         .unwrap_or_else(|| project(&anchor, curve));
@@ -304,25 +329,11 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
         }
 
         for raw_node in lrs.nodes().unwrap_or_default().iter() {
-            result.nodes.push(Node {
-                id: raw_node.id().to_owned(),
-                geometry: raw_node.geometry().map(|geom| {
-                    point! {
-                        x: geom.x(),
-                        y: geom.y(),
-                    }
-                }),
-                properties: from_fb(raw_node.properties()),
-            });
+            result.nodes.push(Node::from(raw_node));
         }
 
         for raw_segment in lrs.segments().unwrap_or_default().iter() {
-            result.segments.push(Segment {
-                id: raw_segment.id().to_owned(),
-                properties: from_fb(raw_segment.properties()),
-                start_node: NodeHandle(raw_segment.start_node_index() as usize),
-                end_node: NodeHandle(raw_segment.end_node_index() as usize),
-            })
+            result.segments.push(Segment::from(raw_segment))
         }
         Ok(result)
     }
