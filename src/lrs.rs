@@ -295,7 +295,7 @@ impl<CurveImpl: Curve> Lrs<CurveImpl> {
                         .unwrap_or_else(|| project(&anchor, curve));
 
                     match anchor.name() {
-                        Some(name) => Anchor::new(
+                        Some(name) => Anchor::new_named(
                             name,
                             scale_position,
                             curve_position,

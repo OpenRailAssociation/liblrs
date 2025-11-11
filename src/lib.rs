@@ -50,6 +50,8 @@ fn read_and_write_lrs() {
 
     let buffer = builder.build_data(properties!("source" => "example"));
     let lrs = lrs::Lrs::<SphericalLineStringCurve>::from_bytes(buffer).unwrap();
-    let anchor = &lrs.lrms[0].scale.anchors[0];
-    assert_eq!(anchor.id.as_ref().unwrap(), "12");
+    match &lrs.lrms[0].scale.anchors[0] {
+        lrm_scale::Anchor::Named(anchor) => assert_eq!(anchor.name, "12"),
+        _ => unreachable!(),
+    }
 }
