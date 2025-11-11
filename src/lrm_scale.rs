@@ -29,13 +29,14 @@ pub enum LrmScaleError {
     NoAnchorFound,
 }
 
-/// An `Anchor` is a reference point that is well known from which the location is computed.
+/// An unnamed anchor is an anchor that is not a landmark, and no point will be referenced from that anchor.
+///
+/// It is used to match a scale position with a `Curve` position.
+/// This can happen when an object between two `NamedAnchor` has a bad offset:
+/// if it is said to be 300m away from the previous named anchor, but in reality it is 322m.
+/// This makes sure that an object label at +310m is located after the one at +300m.
 #[derive(PartialEq, Debug, Clone)]
-pub struct Anchor {
-    /// Some `Anchor` objects might not be named,
-    /// e.g. the first anchor of the LRM.
-    pub id: Option<String>,
-
+pub struct UnnamedAnchor {
     /// Distance from the start of the scale in the scale space, can be negative.
     pub scale_position: ScalePosition,
 
@@ -51,54 +52,112 @@ pub struct Anchor {
     pub properties: Properties,
 }
 
+/// A named anchor is an anchor that is a known reference point.
+///
+/// It often is a milestone (such a km 42), but it can be any landmark (a bridge, a notable building…)
+#[derive(PartialEq, Debug, Clone)]
+pub struct NamedAnchor {
+    /// The name that identifies the anchor. It must be unique within the `LrmScale`.
+    pub name: String,
+    /// Distance from the start of the scale in the scale space, can be negative.
+    pub scale_position: ScalePosition,
+
+    /// Real distance from the start of the `Curve`.
+    /// The `Curve` might not start at the same 0 (e.g. the `Curve` is longer than the scale),
+    /// or the `Curve` might not progress at the same rate (e.g. the `Curve` is a schematic representation that distorts distances).
+    pub curve_position: CurvePosition,
+
+    /// Position of the anchor on the `Curve`.
+    pub point: Option<Point>,
+
+    /// Metadata to describe the node
+    pub properties: Properties,
+}
+
+/// An anchor is a reference point on a `LrmScale`.
+///
+/// It can either be a `NamedAnchor` or an `UnnamedAnchor`.
+#[derive(Debug, PartialEq, Clone)]
+pub enum Anchor {
+    /// A `NamedAnchor`
+    Named(NamedAnchor),
+    /// An `UnnamedAnchor`
+    Unnamed(UnnamedAnchor),
+}
+
 impl Anchor {
     /// Builds a named `Anchor`.
-    pub fn new(
+    pub fn new_named(
         name: &str,
         scale_position: ScalePosition,
         curve_position: CurvePosition,
         point: Option<Point>,
         properties: Properties,
     ) -> Self {
-        Self {
-            id: Some(name.to_owned()),
+        Self::Named(NamedAnchor {
+            name: name.to_owned(),
             scale_position,
             curve_position,
             point,
             properties,
-        }
+        })
     }
 
-    /// Builds an unnamed `Anchor`.
+    /// Create an unnamed anchor.
     pub fn new_unnamed(
         scale_position: ScalePosition,
         curve_position: CurvePosition,
         point: Option<Point>,
         properties: Properties,
     ) -> Self {
-        Self {
-            id: None,
+        Self::Unnamed(UnnamedAnchor {
             scale_position,
             curve_position,
             point,
             properties,
+        })
+    }
+
+    /// Position of the anchor on the scale.
+    ///
+    /// This value is arbitrary. It typically is expressed in meters, but can be any unit.
+    /// It is common, but not necessary that the scale starts at 0 at the start of the curve.
+    pub fn scale_position(&self) -> ScalePosition {
+        match self {
+            Anchor::Named(anchor) => anchor.scale_position,
+            Anchor::Unnamed(anchor) => anchor.scale_position,
         }
     }
 
-    fn as_named(&self) -> Option<NamedAnchor> {
-        self.id.as_ref().map(|id| NamedAnchor {
-            id: id.to_owned(),
-            scale_position: self.scale_position,
-            curve_position: self.curve_position,
-        })
+    /// Position of the anchor on the curve.
+    ///
+    /// The value is between 0 and 1 and represents a fraction of the curve.
+    /// The can sometimes be negative to represent an anchor located before the curve starts.
+    pub fn curve_position(&self) -> ScalePosition {
+        match self {
+            Anchor::Named(anchor) => anchor.curve_position,
+            Anchor::Unnamed(anchor) => anchor.curve_position,
+        }
     }
-}
 
-// Private struct to be used when we only deal with Anchor that has name.
-struct NamedAnchor {
-    id: String,
-    scale_position: ScalePosition,
-    curve_position: CurvePosition,
+    /// Properties of the anchor
+    pub fn properties(&self) -> &Properties {
+        match self {
+            Anchor::Named(anchor) => &anchor.properties,
+            Anchor::Unnamed(anchor) => &anchor.properties,
+        }
+    }
+
+    /// Geographical position of the anchor
+    ///
+    /// The location can be outside of the curve (a landmark visible from the curve)
+    /// It is optional as it might be defined only with the curve position
+    pub fn point(&self) -> Option<Point> {
+        match self {
+            Anchor::Named(anchor) => anchor.point,
+            Anchor::Unnamed(anchor) => anchor.point,
+        }
+    }
 }
 
 /// A measure defines a location on the [LrmScale].
@@ -125,7 +184,7 @@ impl LrmScaleMeasure {
 }
 
 /// Represents an `LrmScale` and allows to map [Measure] to a position along a `Curve`.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct LrmScale {
     /// Unique identifier.
     pub id: String,
@@ -140,21 +199,21 @@ impl LrmScale {
     pub fn locate_point(&self, measure: &LrmScaleMeasure) -> Result<CurvePosition, LrmScaleError> {
         let named_anchor = self
             .iter_named()
-            .find(|anchor| anchor.id == measure.anchor_name)
+            .find(|anchor| anchor.name == measure.anchor_name)
             .ok_or(LrmScaleError::UnknownAnchorName)?;
 
         let scale_position = named_anchor.scale_position + measure.scale_offset;
         let anchors = self
             .anchors
             .windows(2)
-            .find(|window| window[1].scale_position >= scale_position)
+            .find(|window| window[1].scale_position() >= scale_position)
             .or_else(|| self.anchors.windows(2).last())
             .ok_or(LrmScaleError::NoAnchorFound)?;
 
-        let scale_interval = anchors[0].scale_position - anchors[1].scale_position;
-        let curve_interval = anchors[0].curve_position - anchors[1].curve_position;
-        Ok(anchors[0].curve_position
-            + curve_interval * (scale_position - anchors[0].scale_position) / scale_interval)
+        let scale_interval = anchors[0].scale_position() - anchors[1].scale_position();
+        let curve_interval = anchors[0].curve_position() - anchors[1].curve_position();
+        Ok(anchors[0].curve_position()
+            + curve_interval * (scale_position - anchors[0].scale_position()) / scale_interval)
     }
 
     /// Returns a measure given a distance along the `Curve`.
@@ -172,19 +231,19 @@ impl LrmScale {
         // Then we search the nearest Anchor that will be the reference
         // to convert from Curve units to scale units.
         let nearest_anchor = if named_anchor.curve_position < curve_position {
-            self.next_anchor(&named_anchor.id)
-                .or(self.previous_anchor(&named_anchor.id))
+            self.next_anchor(&named_anchor.name)
+                .or(self.previous_anchor(&named_anchor.name))
         } else {
-            self.previous_anchor(&named_anchor.id)
-                .or(self.next_anchor(&named_anchor.id))
+            self.previous_anchor(&named_anchor.name)
+                .or(self.next_anchor(&named_anchor.name))
         }
         .ok_or(LrmScaleError::NoAnchorFound)?;
 
-        let ratio = (nearest_anchor.scale_position - named_anchor.scale_position)
-            / (nearest_anchor.curve_position - named_anchor.curve_position);
+        let ratio = (nearest_anchor.scale_position() - named_anchor.scale_position)
+            / (nearest_anchor.curve_position() - named_anchor.curve_position);
 
         Ok(LrmScaleMeasure {
-            anchor_name: named_anchor.id,
+            anchor_name: named_anchor.name.clone(),
             scale_offset: (curve_position - named_anchor.curve_position) * ratio,
         })
     }
@@ -201,7 +260,7 @@ impl LrmScale {
             .ok_or(LrmScaleError::NoAnchorFound)?;
 
         Ok(LrmScaleMeasure {
-            anchor_name: named_anchor.id,
+            anchor_name: named_anchor.name.clone(),
             scale_offset: scale_position - named_anchor.scale_position,
         })
     }
@@ -211,13 +270,13 @@ impl LrmScale {
     pub fn get_position(&self, measure: LrmScaleMeasure) -> Result<ScalePosition, LrmScaleError> {
         let named_anchor = self
             .iter_named()
-            .find(|anchor| anchor.id == measure.anchor_name)
+            .find(|anchor| anchor.name == measure.anchor_name)
             .ok_or(LrmScaleError::UnknownAnchorName)?;
 
         Ok(named_anchor.scale_position + measure.scale_offset)
     }
 
-    fn nearest_named(&self, curve_position: CurvePosition) -> Option<NamedAnchor> {
+    fn nearest_named(&self, curve_position: CurvePosition) -> Option<&NamedAnchor> {
         // Tries to find the Anchor whose curve_position is the biggest possible, yet smaller than Curve position
         // Otherwise take the first named
         // Anchor names   ----A----B----
@@ -232,7 +291,7 @@ impl LrmScale {
             .or_else(|| self.iter_named().next())
     }
 
-    fn scale_nearest_named(&self, scale_position: ScalePosition) -> Option<NamedAnchor> {
+    fn scale_nearest_named(&self, scale_position: ScalePosition) -> Option<&NamedAnchor> {
         // Like nearest_named, but our position is along the scale
         self.iter_named()
             .rev()
@@ -245,7 +304,10 @@ impl LrmScale {
         self.anchors
             .iter()
             .rev()
-            .skip_while(|anchor| anchor.id.as_deref() != Some(name))
+            .skip_while(|anchor| match anchor {
+                Anchor::Named(anchor) => anchor.name != name,
+                Anchor::Unnamed(_) => true,
+            })
             .nth(1)
     }
 
@@ -253,20 +315,24 @@ impl LrmScale {
     fn next_anchor(&self, name: &str) -> Option<&Anchor> {
         self.anchors
             .iter()
-            .skip_while(|anchor| anchor.id.as_deref() != Some(name))
+            .skip_while(|anchor| match anchor {
+                Anchor::Named(anchor) => anchor.name != name,
+                Anchor::Unnamed(_) => true,
+            })
             .nth(1)
     }
 
     // Iterates only on named Anchor objects
-    fn iter_named(&self) -> impl DoubleEndedIterator<Item = NamedAnchor> + '_ {
-        self.anchors.iter().filter_map(|anchor| anchor.as_named())
+    fn iter_named(&self) -> impl DoubleEndedIterator<Item = &NamedAnchor> + '_ {
+        self.anchors.iter().filter_map(|anchor| match anchor {
+            Anchor::Named(anchor) => Some(anchor),
+            Anchor::Unnamed(_) => None,
+        })
     }
 }
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use geo::point;
-
     use crate::properties;
 
     use super::*;
@@ -275,8 +341,8 @@ pub(crate) mod tests {
         LrmScale {
             id: "id".to_owned(),
             anchors: vec![
-                Anchor::new("a", 0., 0., Some(point! { x: 0., y: 0. }), properties!()),
-                Anchor::new("b", 10., 0.5, Some(point! { x: 0., y: 0. }), properties!()),
+                Anchor::new_named("a", 0., 0., None, properties!()),
+                Anchor::new_named("b", 10., 0.5, None, properties!()),
             ],
         }
     }
@@ -311,15 +377,15 @@ pub(crate) mod tests {
         let scale = LrmScale {
             id: "id".to_owned(),
             anchors: vec![
-                Anchor::new("a", 0., 2., Some(point! { x: 0., y: 0. }), properties!()),
-                Anchor::new("b", 10., 3., Some(point! { x: 0., y: 0. }), properties!()),
+                Anchor::new_named("a", 0., 2., None, properties!()),
+                Anchor::new_named("b", 10., 3., None, properties!()),
             ],
         };
 
-        assert_eq!(scale.nearest_named(2.1).unwrap().id, "a");
-        assert_eq!(scale.nearest_named(2.9).unwrap().id, "a");
-        assert_eq!(scale.nearest_named(1.5).unwrap().id, "a");
-        assert_eq!(scale.nearest_named(3.5).unwrap().id, "b");
+        assert_eq!(scale.nearest_named(2.1).unwrap().name, "a");
+        assert_eq!(scale.nearest_named(2.9).unwrap().name, "a");
+        assert_eq!(scale.nearest_named(1.5).unwrap().name, "a");
+        assert_eq!(scale.nearest_named(3.5).unwrap().name, "b");
     }
 
     #[test]
@@ -343,10 +409,10 @@ pub(crate) mod tests {
         let scale = LrmScale {
             id: "id".to_owned(),
             anchors: vec![
-                Anchor::new_unnamed(0., 100., Some(point! { x: 0., y: 0. }), properties!()),
-                Anchor::new("a", 1., 200., Some(point! { x: 0., y: 0. }), properties!()),
-                Anchor::new("b", 3., 300., Some(point! { x: 0., y: 0. }), properties!()),
-                Anchor::new_unnamed(4., 400., Some(point! { x: 0., y: 0. }), properties!()),
+                Anchor::new_unnamed(0., 100., None, properties!()),
+                Anchor::new_named("a", 1., 200., None, properties!()),
+                Anchor::new_named("b", 3., 300., None, properties!()),
+                Anchor::new_unnamed(4., 400., None, properties!()),
             ],
         };
 
@@ -414,7 +480,7 @@ pub(crate) mod tests {
         let scale = LrmScale {
             id: "id".to_owned(),
             anchors: vec![
-                Anchor::new("a", 1000. + 0., -2., None, properties!()),
+                Anchor::new_named("a", 1000. + 0., -2., None, properties!()),
                 Anchor::new_unnamed(1000. + 300., 1., None, properties!()),
             ],
         };
@@ -437,7 +503,7 @@ pub(crate) mod tests {
         let scale = LrmScale {
             id: "id".to_owned(),
             anchors: vec![
-                Anchor::new("a", 0., 0., None, properties!()),
+                Anchor::new_named("a", 0., 0., None, properties!()),
                 Anchor::new_unnamed(1., 0.4, None, properties!()),
                 Anchor::new_unnamed(9., 0.6, None, properties!()),
             ],

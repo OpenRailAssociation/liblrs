@@ -301,11 +301,16 @@ pub struct LrmProjection {
 
 impl From<&liblrs::lrm_scale::Anchor> for Anchor {
     fn from(value: &liblrs::lrm_scale::Anchor) -> Self {
+        let name = match value {
+            liblrs::lrm_scale::Anchor::Named(value) => value.name.clone(),
+            liblrs::lrm_scale::Anchor::Unnamed(_) => "-".to_owned(),
+        };
+
         Self {
-            name: value.clone().id.unwrap_or_else(|| "-".to_owned()),
-            position: value.point.map(|p| p.into()),
-            curve_position: value.curve_position,
-            scale_position: value.scale_position,
+            name,
+            position: value.point().map(|p| p.into()),
+            curve_position: value.curve_position(),
+            scale_position: value.scale_position(),
         }
     }
 }

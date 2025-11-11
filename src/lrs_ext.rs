@@ -99,6 +99,6 @@ impl ExtLrs {
 
     /// [`Properties`] for a given anchor
     pub fn anchor_properties(&self, lrm_index: usize, anchor_index: usize) -> &Properties {
-        &self.lrs.lrms[lrm_index].scale.anchors[anchor_index].properties
+        self.lrs.lrms[lrm_index].scale.anchors[anchor_index].properties()
     }
 }
