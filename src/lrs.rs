@@ -521,7 +521,8 @@ impl<CurveImpl: Curve> LrsBase for Lrs<CurveImpl> {
             .collect();
         result.sort_by(|a, b| {
             a.orthogonal_offset
-                .partial_cmp(&b.orthogonal_offset)
+                .abs()
+                .partial_cmp(&b.orthogonal_offset.abs())
                 .unwrap_or(Ordering::Equal)
         });
         result
