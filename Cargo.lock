@@ -574,7 +574,6 @@ dependencies = [
  "flatbuffers",
  "geo",
  "geo-index",
- "getrandom",
  "num-traits",
  "osm4routing",
  "thiserror 2.0.12",
@@ -586,6 +585,7 @@ version = "0.4.0"
 dependencies = [
  "console_error_panic_hook",
  "geo-types",
+ "getrandom",
  "liblrs",
  "serde-wasm-bindgen",
  "wasm-bindgen",
