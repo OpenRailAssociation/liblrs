@@ -567,7 +567,7 @@ checksum = "d750af042f7ef4f724306de029d18836c26c1765a54a6a3f094cbd23a7267ffa"
 
 [[package]]
 name = "liblrs"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "approx",
  "clap",
@@ -582,7 +582,7 @@ dependencies = [
 
 [[package]]
 name = "liblrs-wasm"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "console_error_panic_hook",
  "geo-types",
@@ -593,7 +593,7 @@ dependencies = [
 
 [[package]]
 name = "liblrs_python"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "geo-types",
  "liblrs",
