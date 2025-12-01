@@ -245,6 +245,15 @@ class Lrs:
         """
         ...
 
+    def lookup_lrms(self, point:Point) -> list<LrmProjection>:
+        r"""
+        Projects a [`Point`] on all applicable [`Traversal`]s nearby.
+        The [`Point`] must be in the bounding box of the [`Curve`] of the [`Traversal`].
+        The result is sorted by `orthogonal_offset`: the nearest [`Lrm`] to the [`Point`] is the first item.
+        """
+        ...
+
+
     def lrs_properties(self) -> dict[str, str]:
         r"""
         [`Properties`] of the lrs
