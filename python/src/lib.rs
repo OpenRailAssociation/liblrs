@@ -76,7 +76,7 @@ impl From<Point> for geo_types::Coord {
 
 #[gen_stub_pyclass]
 #[pyclass]
-/// Represent a position on an [`LrmScale`] relative as an `offset` to an [`Anchor`].
+/// Represents a position on an [`LrmScale`] relative as an `offset` to an [`Anchor`].
 pub struct LrmScaleMeasure {
     #[pyo3(get, set)]
     /// `name` of the reference [`Anchor`].
@@ -306,7 +306,7 @@ impl Builder {
         }
     }
 
-    /// Add a new topological node (e.g. a railway switch)
+    /// Add a new topological node (e.g., a railway switch)
     pub fn add_node(&mut self, id: &str, coord: Point, properties: Properties) -> usize {
         self.inner.add_node(id, coord.into(), properties)
     }
@@ -337,7 +337,7 @@ impl Builder {
     /// Add a new segment
     /// 
     /// The geometry represents the curve
-    /// start_node_index and end_node_index are the topological extremeties returned by `add_node`
+    /// `start_node_index` and `end_node_index` are the topological extremeties returned by `add_node`
     pub fn add_segment(
         &mut self,
         id: &str,
