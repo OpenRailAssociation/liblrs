@@ -114,6 +114,10 @@ jobs:
         run: uv run maturin develop
       - name: Run the tests
         run: uv run pytest
+      - name: Check stubs are up-to-date
+        run: |
+          cargo run --bin stub_gen
+          git diff --exit-code
 
   wasm:
     name: Build wasm release
