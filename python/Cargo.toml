@@ -13,5 +13,5 @@ crate-type = ["cdylib", "rlib"]
 liblrs = { path = ".." }
 geo-types = "*"
 # "abi3" tells pyo3 (and maturin) to build using the stable ABI
-pyo3 = { version = "0.27.2", features = ["abi3", "extension-module"] }
+pyo3 = { version = "0.27.2", features = ["abi3-py310", "extension-module"] }
 pyo3-stub-gen = "0.17.2"
