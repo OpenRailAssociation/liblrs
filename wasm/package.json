@@ -13,12 +13,12 @@
         "webpack-dev-server": "5.2.2"
     },
     "dependencies": {
-        "@turf/bbox": "7.2.0",
-        "@turf/helpers": "7.2.0",
-        "alpinejs": "3.14.8",
-        "maplibre-gl": "5.1.1",
+        "@turf/bbox": "7.3.1",
+        "@turf/helpers": "7.3.1",
+        "alpinejs": "3.15.2",
+        "maplibre-gl": "5.14.0",
         "pmtiles": "4.3.0",
-        "text-encoding": "^0.7.0"
+        "text-encoding": "0.7.0"
     },
     "name": "liblrs",
     "version": "0.4.3",
