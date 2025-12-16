@@ -23,9 +23,6 @@ module.exports = {
             TextDecoder: ['text-encoding', 'TextDecoder'],
             TextEncoder: ['text-encoding', 'TextEncoder']
         }),
-        new webpack.EnvironmentPlugin({
-            MAPLIBRE_STYLE: 'https://demotiles.maplibre.org/style.json',
-        })
     ],
     mode: 'development',
     experiments: {

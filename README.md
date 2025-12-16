@@ -61,12 +61,6 @@ npm run serve
 
 And open your browser at `http://localhost:8080`
 
-You can customize the map background if you provide your own [maplibre](https://maplibre.org/) style:
-
-```bash
-MAPLIBRE_STYLE="https://your_tile_provider/style.json?key=42" npm run serve
-```
-
 ### Python bindings
 
 The library is also exposed as python bindings and published on [PyPI](https://pypi.org/project/liblrs-python/).
