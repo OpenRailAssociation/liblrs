@@ -216,35 +216,38 @@ impl LrmScale {
             + curve_interval * (scale_position - anchors[0].scale_position()) / scale_interval)
     }
 
-    /// Returns a measure given a distance along the `Curve`.
+    /// Returns a [LrmScaleMeasure] given a distance along the `Curve`.
+    ///
     /// The corresponding [Anchor] is the named `Anchor` that gives the smallest positive `offset`.
-    /// If such an `Anchor` does not exists, the first named `Anchor` is used.
+    /// If such an `Anchor` does not exists, the first named `Anchor` is used and the offset can be negative.
     pub fn locate_anchor(
         &self,
         curve_position: CurvePosition,
     ) -> Result<LrmScaleMeasure, LrmScaleError> {
         // First, we find the nearest named Anchor to the Curve.
+        // It will be the reference point from which we will compute the offset to the point on the curve
         let named_anchor = self
             .nearest_named(curve_position)
             .ok_or(LrmScaleError::NoAnchorFound)?;
 
-        // Then we search the nearest Anchor that will be the reference
-        // to convert from Curve units to scale units.
-        let nearest_anchor = if named_anchor.curve_position < curve_position {
-            self.next_anchor(&named_anchor.name)
-                .or(self.previous_anchor(&named_anchor.name))
-        } else {
-            self.previous_anchor(&named_anchor.name)
-                .or(self.next_anchor(&named_anchor.name))
-        }
-        .ok_or(LrmScaleError::NoAnchorFound)?;
+        // We need the anchor just before and just after the position to interpolate the scale position
+        // If we are looking for a curve position that is after the last anchor, we extrapolate from the last two
+        let anchors = self
+            .anchors
+            .windows(2)
+            .find(|window| window[1].curve_position() >= curve_position)
+            .or_else(|| self.anchors.windows(2).last())
+            .ok_or(LrmScaleError::NoAnchorFound)?;
 
-        let ratio = (nearest_anchor.scale_position() - named_anchor.scale_position)
-            / (nearest_anchor.curve_position() - named_anchor.curve_position);
+        // We compute a ratio to know how much the scale increases per unit of curve.
+        // This ratio isn’t always constant due to irregularities in anchor measurements
+        let ratio = (anchors[0].scale_position() - anchors[1].scale_position())
+            / (anchors[0].curve_position() - anchors[1].curve_position());
 
         Ok(LrmScaleMeasure {
             anchor_name: named_anchor.name.clone(),
-            scale_offset: (curve_position - named_anchor.curve_position) * ratio,
+            scale_offset: (anchors[0].scale_position() - named_anchor.scale_position)
+                + (curve_position - anchors[0].curve_position()) * ratio,
         })
     }
 
@@ -297,29 +300,6 @@ impl LrmScale {
             .rev()
             .find(|anchor| anchor.scale_position <= scale_position)
             .or_else(|| self.iter_named().next())
-    }
-
-    // Finds the closest Anchor before the Anchor having the name `name`
-    fn previous_anchor(&self, name: &str) -> Option<&Anchor> {
-        self.anchors
-            .iter()
-            .rev()
-            .skip_while(|anchor| match anchor {
-                Anchor::Named(anchor) => anchor.name != name,
-                Anchor::Unnamed(_) => true,
-            })
-            .nth(1)
-    }
-
-    // Finds the closest Anchor after the Anchor having the name `name`
-    fn next_anchor(&self, name: &str) -> Option<&Anchor> {
-        self.anchors
-            .iter()
-            .skip_while(|anchor| match anchor {
-                Anchor::Named(anchor) => anchor.name != name,
-                Anchor::Unnamed(_) => true,
-            })
-            .nth(1)
     }
 
     // Iterates only on named Anchor objects
@@ -405,12 +385,13 @@ pub(crate) mod tests {
 
     #[test]
     fn locate_anchor_with_unnamed() {
-        // ----Unnamed(100)----A(200)----B(300)----Unnamed(400)---
+        // ----Unnamed(100)----A(200)----Unnamed(250)----B(300)----Unnamed(400)---
         let scale = LrmScale {
             id: "id".to_owned(),
             anchors: vec![
                 Anchor::new_unnamed(0., 100., None, properties!()),
                 Anchor::new_named("a", 1., 200., None, properties!()),
+                Anchor::new_unnamed(1.2, 250., None, properties!()), // 250 is between A and B, but the scale is a voluntarily off
                 Anchor::new_named("b", 3., 300., None, properties!()),
                 Anchor::new_unnamed(4., 400., None, properties!()),
             ],
@@ -426,12 +407,20 @@ pub(crate) mod tests {
         assert_eq!(measure.anchor_name, "a");
         assert_eq!(measure.scale_offset, -1.5);
 
+        // Named----Unnamed----position----Named
+        let measure = scale.locate_anchor(275.).unwrap();
+        assert_eq!(measure.anchor_name, "a");
+        // The first unnamed is at 0.2 from a.
+        // The position to find is right in the middle of 250 and 300, so 0.9 from the first unnamed
+        assert_eq!(measure.scale_offset, 0.2 + 0.9);
+
         // Unnamed----Named----position----Unnamed
         let measure = scale.locate_anchor(350.).unwrap();
         assert_eq!(measure.anchor_name, "b");
         assert_eq!(measure.scale_offset, 0.5);
 
         // Unnamed----Named----Unnamed----position
+        // This tests we are also able to extrapolate when the position is not between two anchors
         let measure = scale.locate_anchor(500.).unwrap();
         assert_eq!(measure.anchor_name, "b");
         assert_eq!(measure.scale_offset, 2.);
