@@ -18,7 +18,17 @@ async function file_selected(el) {
     const curves_features = []
     const anchors_features = []
     for (let lrm_index = 0; lrm_index < lrs.lrm_len(); lrm_index++) {
-        const anchors = lrs.get_anchors(lrm_index)
+        const anchors = lrs.get_anchors(lrm_index).map(a => {
+            return {
+                name: a.name,
+                curve_position: a.curve_position,
+                scale_position: a.scale_position,
+                position: (a.position !== undefined) ? {
+                    x: a.position.x,
+                    y: a.position.y,
+                } : undefined,
+            }
+        })
         const lrm_id = lrs.get_lrm_scale_id(lrm_index);
         const geom = lrs.get_lrm_geom(lrm_index);
         const feature = turf.lineString(geom.map(p => [p.x, p.y]), { id: lrm_id, anchors }, {
