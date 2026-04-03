@@ -13,7 +13,7 @@ use crate::lrs::Properties;
 use crate::lrs_ext::ExtLrs;
 use crate::lrs_generated::{self, *};
 use crate::osm_helpers::sort_edges;
-use crate::properties;
+use crate::{DataIssueReporter, properties};
 
 /// The linear position of an [`Anchor`] doesn’t always match the measured distance.
 /// For example if a road was transformed into a bypass, resulting in a longer road,
@@ -436,7 +436,10 @@ impl<'fbb> Builder<'fbb> {
         lrm_tag: &str,
         required: Vec<(String, String)>,
         to_reject: Vec<(String, String)>,
+        reporter: Option<&mut dyn DataIssueReporter>,
     ) {
+        let mut default_reporter = ();
+        let reporter = reporter.unwrap_or(&mut default_reporter);
         let mut reader = osm4routing::Reader::new().merge_ways().read_tag(lrm_tag);
 
         for (key, value) in required.iter() {
@@ -479,7 +482,7 @@ impl<'fbb> Builder<'fbb> {
 
         // Sort the traversals
         for (srv_ref, edges) in traversals.into_iter() {
-            let segments: Vec<_> = sort_edges(edges, &srv_ref)
+            let segments: Vec<_> = sort_edges(edges, &srv_ref, reporter)
                 .into_iter()
                 .map(|(edge, reversed)| SegmentOfTraversal {
                     segment_index: edges_map[&edge.id],

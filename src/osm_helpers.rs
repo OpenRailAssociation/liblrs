@@ -3,6 +3,8 @@
 
 use osm4routing::Edge;
 
+use crate::DataIssueReporter;
+
 /// When sorting the edges, each candidate is tested to see if they match and if they need to be reversed.
 #[derive(PartialEq, Eq, Debug)]
 enum Candidate {
@@ -79,7 +81,11 @@ fn sort_iteration(
 /// The traversals are identified by a tag that is used on many ways.
 /// We try to build the longest continous chain of ways, but the is no guarantee to succeed.
 /// The ways might not share nodes or they might represent a tree.
-pub fn sort_edges(edges: Vec<Edge>, traversal_ref: &str) -> Vec<(Edge, bool)> {
+pub fn sort_edges(
+    edges: Vec<Edge>,
+    traversal_ref: &str,
+    reporter: &mut dyn DataIssueReporter,
+) -> Vec<(Edge, bool)> {
     let (to_insert, sorted) = sort_iteration(edges, vec![]);
 
     // Print some stats about edges that could not be matched
@@ -98,10 +104,7 @@ pub fn sort_edges(edges: Vec<Edge>, traversal_ref: &str) -> Vec<(Edge, bool)> {
         } else {
             last_edge.0.target
         };
-        println!(
-            "[WARN] on traversal {traversal_ref}, ignoring {ignored} edges out of {total}. Sorted from {} to {}",
-            first.0, last.0
-        );
+        reporter.report_ignoring_traversal_edges(traversal_ref, ignored, total, first.0, last.0);
     }
 
     sorted
@@ -170,7 +173,7 @@ pub mod tests {
     fn sort_edges_simple() {
         let e = edge(0, 1);
 
-        let sorted = sort_edges(vec![e.clone()], "");
+        let sorted = sort_edges(vec![e.clone()], "", &mut crate::LoggingDataIssueReporter);
         assert_eq!(sorted[0].0, e);
         assert!(!sorted[0].1);
     }
@@ -180,7 +183,11 @@ pub mod tests {
         let e1 = edge(0, 1);
         let e2 = edge(1, 2);
 
-        let sorted = sort_edges(vec![e1.clone(), e2.clone()], "");
+        let sorted = sort_edges(
+            vec![e1.clone(), e2.clone()],
+            "",
+            &mut crate::LoggingDataIssueReporter,
+        );
         assert_eq!(sorted[0].0, e1);
         assert_eq!(sorted[1].0, e2);
         assert!(!sorted[0].1);
@@ -192,7 +199,11 @@ pub mod tests {
         let e1 = edge(1, 0);
         let e2 = edge(1, 2);
 
-        let sorted = sort_edges(vec![e1.clone(), e2.clone()], "");
+        let sorted = sort_edges(
+            vec![e1.clone(), e2.clone()],
+            "",
+            &mut crate::LoggingDataIssueReporter,
+        );
         assert_eq!(sorted[0].0, e1);
         assert_eq!(sorted[1].0, e2);
         assert!(sorted[0].1);
