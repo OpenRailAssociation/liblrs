@@ -711,7 +711,7 @@ mod tests {
     use approx::assert_relative_eq;
     use geo::line_string;
 
-    use crate::{curves::PlanarLineStringCurve, properties};
+    use crate::curves::PlanarLineStringCurve;
 
     use super::*;
 

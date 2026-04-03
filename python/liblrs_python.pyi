@@ -128,7 +128,7 @@ class Builder:
         r"""
         List all the traversals by their id and index
         """
-    def read_from_osm(self, input_osm_file: builtins.str | os.PathLike | pathlib.Path, lrm_tag: builtins.str, required: typing.Sequence[tuple[builtins.str, builtins.str]], to_reject: typing.Sequence[tuple[builtins.str, builtins.str]]) -> None:
+    def read_from_osm(self, input_osm_file: builtins.str | os.PathLike | pathlib.Path, lrm_tag: builtins.str, required: typing.Sequence[tuple[builtins.str, builtins.str]], to_reject: typing.Sequence[tuple[builtins.str, builtins.str]], reporter: DataIssueReporter) -> None:
         r"""
         Read the topology from an OpenStreetMap source
         
@@ -178,6 +178,9 @@ class Builder:
         In the end, the first coordinate must be closer to the beginning than the second
         If both points are so far from the curve that they are projected to a end, we consider the offset to the curve
         """
+
+class DataIssueReporter:
+    def report_ignoring_traversal_edges(self, traversal_ref: builtins.str, ignored_count: builtins.int, total_count: builtins.int, first_node: builtins.int, last_node: builtins.int) -> None: ...
 
 @typing.final
 class LrmProjection:

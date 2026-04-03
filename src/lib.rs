@@ -21,6 +21,46 @@ pub mod lrs_ext;
 #[deny(missing_docs)]
 pub mod builder;
 
+pub trait DataIssueReporter {
+    fn report_ignoring_traversal_edges(
+        &mut self,
+        traversal_ref: &str,
+        ignored_count: usize,
+        total_count: usize,
+        first_node: i64,
+        last_node: i64,
+    );
+}
+
+pub struct LoggingDataIssueReporter;
+
+impl DataIssueReporter for LoggingDataIssueReporter {
+    fn report_ignoring_traversal_edges(
+        &mut self,
+        traversal_ref: &str,
+        ignored_count: usize,
+        total_count: usize,
+        first_node: i64,
+        last_node: i64,
+    ) {
+        println!(
+            "[WARN] on traversal {traversal_ref}, ignoring {ignored_count} edges out of {total_count}. Sorted from {first_node} to {last_node}"
+        );
+    }
+}
+
+impl DataIssueReporter for () {
+    fn report_ignoring_traversal_edges(
+        &mut self,
+        _traversal_ref: &str,
+        _ignored_count: usize,
+        _total_count: usize,
+        _first_node: i64,
+        _last_node: i64,
+    ) {
+    }
+}
+
 #[test]
 fn read_and_write_lrs() {
     use builder::*;

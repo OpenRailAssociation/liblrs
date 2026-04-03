@@ -27,6 +27,7 @@ fn liblrs_python(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<AnchorOnLrm>()?;
     m.add_class::<SegmentOfTraversal>()?;
     m.add_class::<Builder>()?;
+    m.add_class::<DataIssueReporter>()?;
     Ok(())
 }
 
@@ -576,15 +577,22 @@ impl Builder {
     /// Read the topology from an OpenStreetMap source
     ///
     /// It reads the nodes, segments and traversals.
-    pub fn read_from_osm(
+    pub fn read_from_osm<'py>(
         &mut self,
         input_osm_file: PathBuf,
         lrm_tag: String,
         required: Vec<(String, String)>,
         to_reject: Vec<(String, String)>,
+        reporter: Bound<'py, DataIssueReporter>,
     ) {
-        self.inner
-            .read_from_osm(&input_osm_file, &lrm_tag, required, to_reject)
+        let mut reporter = PythonDataIssueReporter(reporter);
+        self.inner.read_from_osm(
+            &input_osm_file,
+            &lrm_tag,
+            required,
+            to_reject,
+            Some(&mut reporter),
+        )
     }
 
     /// Save the lrs to a file
@@ -656,3 +664,52 @@ impl Builder {
 }
 
 define_stub_info_gatherer!(stub_info);
+
+#[gen_stub_pyclass]
+#[pyclass(subclass)]
+struct DataIssueReporter {}
+
+#[pymethods]
+impl DataIssueReporter {
+    #[new]
+    fn new() -> Self {
+        Self {}
+    }
+}
+
+#[allow(unused_variables)]
+#[gen_stub_pymethods]
+impl liblrs::DataIssueReporter for DataIssueReporter {
+    fn report_ignoring_traversal_edges(
+        &mut self,
+        traversal_ref: &str,
+        ignored_count: usize,
+        total_count: usize,
+        first_node: i64,
+        last_node: i64,
+    ) {
+    }
+}
+
+struct PythonDataIssueReporter<'a>(Bound<'a, DataIssueReporter>);
+impl liblrs::DataIssueReporter for PythonDataIssueReporter<'_> {
+    fn report_ignoring_traversal_edges(
+        &mut self,
+        traversal_ref: &str,
+        ignored_count: usize,
+        total_count: usize,
+        first_node: i64,
+        last_node: i64,
+    ) {
+        let _ = self.0.call_method1(
+            "report_ignoring_traversal_edges",
+            (
+                traversal_ref,
+                ignored_count,
+                total_count,
+                first_node,
+                last_node,
+            ),
+        );
+    }
+}

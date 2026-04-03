@@ -44,6 +44,7 @@ fn main() {
         &cli_args.lrm_tag,
         required,
         to_reject,
+        Some(&mut liblrs::LoggingDataIssueReporter),
     );
 
     builder.save(
