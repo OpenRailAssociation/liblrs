@@ -1,4 +1,3 @@
-'use strict';
 import Bbox from '@turf/bbox';
 import * as turf from '@turf/helpers';
 import Alpine from 'alpinejs';
@@ -31,8 +30,9 @@ async function file_selected(el) {
         })
         const lrm_id = lrs.get_lrm_scale_id(lrm_index);
         const geom = lrs.get_lrm_geom(lrm_index);
-        const feature = turf.lineString(geom.map(p => [p.x, p.y]), { id: lrm_id, anchors }, {
-            id: lrm_index,
+        const metadata = Object.fromEntries(lrs.lrm_properties(lrm_index))
+        const feature = turf.lineString(geom.map(p => [p.x, p.y]), { id: lrm_id, metadata }, {
+          id: lrm_index,
         });
         feature.bbox = Bbox(feature)
         curves_features.push(feature);
@@ -73,7 +73,17 @@ async function file_selected(el) {
         'source': 'lrms',
         'paint': {
             'line-color': '#888',
-            'line-width': 2
+            'line-width': [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                8,
+                1,
+                16,
+                2,
+                18,
+                3
+            ]
         }
     });
 
@@ -109,14 +119,23 @@ async function file_selected(el) {
         type: 'circle',
         source: 'anchors',
         paint: {
-            'circle-radius': 5,
+            'circle-radius': [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                8,
+                1,
+                16,
+                6
+            ],
             'circle-color': '#eee',
             'circle-opacity': ['case',
                 ['boolean', ['feature-state', 'selected'], true],
                 0,
                 1,
             ]
-        }
+      },
+      minzoom: 8,
     })
 
     map.addLayer({
@@ -124,14 +143,23 @@ async function file_selected(el) {
         type: 'circle',
         source: 'anchors',
         paint: {
-            'circle-radius': 5,
+            'circle-radius': [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                8,
+                1,
+                16,
+                6
+            ],
             'circle-color': 'blue',
             'circle-opacity': ['case',
                 ['boolean', ['feature-state', 'selected'], true],
                 1,
                 0,
             ]
-        }
+        },
+        minzoom: 8,
     })
 
     map.addLayer({
@@ -139,14 +167,14 @@ async function file_selected(el) {
         type: 'symbol',
         source: 'anchors',
         layout: {
-            //'text-field': ['concat', ['get', 'id'], ['literal', '-'], ['get', 'lrm_id'], ['literal', ' curve_pos:'], ['get', 'curve'], ['literal', ' scale:'], ['get', 'scale']],
             'text-field': ['get', 'id'],
             'text-offset': [1, 0],
         },
         paint: {
             'text-halo-color': 'white',
             'text-halo-width': 2,
-        }
+        },
+        minzoom: 10,
     })
 
     map.addLayer({
@@ -179,8 +207,6 @@ async function file_selected(el) {
         }
     });
 
-
-
     map.on('mouseenter', 'lrms-hitbox', () => {
         map.getCanvas().style.cursor = 'pointer'
     })
@@ -188,26 +214,24 @@ async function file_selected(el) {
         map.getCanvas().style.cursor = ''
     })
 
-
     map.on('click', 'lrms-hitbox', (e) => {
+        const lrm_id = e.features[0].id;
+        const clicked_point = new Point(e.lngLat.lng, e.lngLat.lat);
 
-        let lrm_id = e.features[0].id;
-        let clicked_point = new Point(e.lngLat.lng, e.lngLat.lat);
+        const projection = lrs.lookup(clicked_point, lrm_id)[0];
 
-        let projection = lrs.lookup(clicked_point, lrm_id)[0];
-
-        let window_lrms = window.Alpine.store('lrms')
+        const window_lrms = window.Alpine.store('lrms')
         if (window_lrms.lrm_id !== lrm_id) {
             window_lrms.details(lrm_id, false)
         }
 
         window_lrms.selectedFeature = curves_features[lrm_id];
-        let offset = Math.round(projection.measure.scale_offset)
+        const offset = Math.round(projection.measure.scale_offset)
         const offset_sign = offset >= 0 ? '+' : '-';
         window_lrms.pkStart = projection.measure.anchor_name + offset_sign + String(Math.abs(offset)).padStart(3, "0");
 
         window_lrms.startMeasure = projection.measure;
-        let point = lrs.resolve(lrm_id, projection.measure)
+        const point = lrs.resolve(lrm_id, projection.measure)
         window_lrms.pkStartPoint = turf.point([point.x, point.y]);
         window_lrms.handlePks(false)
     });
@@ -221,10 +245,10 @@ async function file_selected(el) {
     }
 }
 
-let protocol = new Protocol();
+const protocol = new Protocol();
 maplibregl.addProtocol('pmtiles', protocol.tile);
 
-let map = new maplibregl.Map({
+const map = new maplibregl.Map({
     container: 'map', // container id
     style: 'https://tuiles.enliberte.fr/styles/basic.json',
     center: [2.3469, 46.8589], // starting position [lng, lat]
@@ -248,7 +272,6 @@ Alpine.store('lrms', {
     pkEndPoint: null,
     startMeasure: null,
     endMeasure: null,
-    anchors: [],
     anchors_features: [],
     filter: '',
 
@@ -268,10 +291,10 @@ Alpine.store('lrms', {
         }
 
     },
-    get waiting() { return this.status == 'waiting' },
-    get loaded() { return this.status == 'loaded' },
-    get error() { return this.status == 'error' },
-    get loading() { return this.status == 'loading' },
+    get waiting() { return this.status === 'waiting' },
+    get loaded() { return this.status === 'loaded' },
+    get error() { return this.status === 'error' },
+    get loading() { return this.status === 'loading' },
     details(id, zoom = true) {
         this.unselect()
         this.lrm_id = id
@@ -307,7 +330,7 @@ Alpine.store('lrms', {
     startPkChange({ target }) {
         const re = /([0-9]+)\+([0-9]+)/;
         if (re.test(target.value)) {
-            const [all, anchor_name, scale_offset] = target.value.match(re)
+            const [_all, anchor_name, scale_offset] = target.value.match(re)
             this.startMeasure = new LrmScaleMeasure(anchor_name, scale_offset);
             const point = this.lrs.resolve(this.selectedFeature.id, this.startMeasure)
             this.pkStartPoint = turf.point([point.x, point.y]);
@@ -320,7 +343,7 @@ Alpine.store('lrms', {
     endPkChange({ target }) {
         const re = /([0-9]+)\+([0-9]+)/;
         if (re.test(target.value)) {
-            const [all, anchor_name, scale_offset] = target.value.match(re)
+            const [_all, anchor_name, scale_offset] = target.value.match(re)
             this.endMeasure = new LrmScaleMeasure(anchor_name, scale_offset);
             const point = this.lrs.resolve(this.selectedFeature.id, this.endMeasure)
             this.pkEndPoint = turf.point([point.x, point.y])

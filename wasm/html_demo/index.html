@@ -73,7 +73,18 @@
                 </div>
                 <template x-if="selectedFeature !== null">
                     <div>
-                        <h3 x-text="selectedFeature.properties.id"></h3>
+                        <div x-data="{details: false}">
+                            <h3 x-text="selectedFeature.properties.id" @click="details = ! details"></h3>
+                            <div x-show="details">
+                                <ul>
+                                    <template x-for="(value, key) in selectedFeature.properties.metadata">
+                                        <li>
+                                            <small><b x-text="key"></b>: <span x-text="value"></span></small>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </div>
                         <small><a x-on:click="unselect">back</a></small>
                         <form class="pure-form pure-form-stacked">
                             <fieldset>
@@ -101,7 +112,6 @@
                                             </template>
                                         </ul>
                                     </div>
-
                                 </li>
                             </template>
                         </ul>
