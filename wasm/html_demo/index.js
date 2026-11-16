@@ -73,7 +73,17 @@ async function file_selected(el) {
         'source': 'lrms',
         'paint': {
             'line-color': '#888',
-            'line-width': 2
+            'line-width': [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                8,
+                1,
+                16,
+                2,
+                18,
+                3
+            ]
         }
     });
 
