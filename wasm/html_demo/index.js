@@ -30,8 +30,9 @@ async function file_selected(el) {
         })
         const lrm_id = lrs.get_lrm_scale_id(lrm_index);
         const geom = lrs.get_lrm_geom(lrm_index);
-        const feature = turf.lineString(geom.map(p => [p.x, p.y]), { id: lrm_id, anchors }, {
-            id: lrm_index,
+        const metadata = Object.fromEntries(lrs.lrm_properties(lrm_index))
+        const feature = turf.lineString(geom.map(p => [p.x, p.y]), { id: lrm_id, metadata }, {
+          id: lrm_index,
         });
         feature.bbox = Bbox(feature)
         curves_features.push(feature);
@@ -246,7 +247,6 @@ Alpine.store('lrms', {
     pkEndPoint: null,
     startMeasure: null,
     endMeasure: null,
-    anchors: [],
     anchors_features: [],
     filter: '',
 
