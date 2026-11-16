@@ -256,7 +256,7 @@ impl Curve for PlanarLineStringCurve {
                     let segment_fraction = (end_fractional_length - cum_length) / length;
                     let point = segment.point_at_ratio_from_start(&Euclidean, segment_fraction);
                     points.push(point);
-                    return Some(LineString::from_iter(points.into_iter()));
+                    return Some(LineString::from_iter(points));
                 }
                 if cum_length > start_fractional_length {
                     points.push(segment.start.into());
@@ -551,7 +551,7 @@ impl Curve for SphericalLineStringCurve {
                     let segment_fraction = (end_fractional_length - cum_length) / length;
                     let point = segment.point_at_ratio_from_start(&Euclidean, segment_fraction);
                     points.push(point);
-                    return Some(LineString::from_iter(points.into_iter()));
+                    return Some(LineString::from_iter(points));
                 }
                 cum_length += length;
             }
