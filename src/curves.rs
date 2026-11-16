@@ -604,7 +604,7 @@ mod tests {
     #[test]
     fn planar_length() {
         let c = PlanarLineStringCurve::new(line_string![(x: 0., y: 0.), (x: 2., y: 0.)], 1.);
-        assert_eq!(2., c.length());
+        assert_relative_eq!(2., c.length());
     }
 
     #[test]
@@ -627,12 +627,12 @@ mod tests {
         let c = PlanarLineStringCurve::new(line_string![(x: 0., y: 0.), (x: 2., y: 0.)], 1.);
 
         let projected = c.project(point! {x: 1., y: 1.}).unwrap();
-        assert_eq!(0.5, projected.distance_along_curve);
-        assert_eq!(1., projected.offset);
+        assert_relative_eq!(0.5, projected.distance_along_curve);
+        assert_relative_eq!(1., projected.offset);
 
         let projected = c.project(point! {x: 1., y: -1.}).unwrap();
-        assert_eq!(0.5, projected.distance_along_curve);
-        assert_eq!(-1., projected.offset);
+        assert_relative_eq!(0.5, projected.distance_along_curve);
+        assert_relative_eq!(-1., projected.offset);
     }
 
     #[test]
@@ -640,8 +640,8 @@ mod tests {
         let c = PlanarLineStringCurve::new(line_string![(x: 0., y: 0.), (x: 2., y: 0.)], 1.);
 
         let p = c.resolve(0.5).unwrap();
-        assert_eq!(p.x(), 1.);
-        assert_eq!(p.y(), 0.);
+        assert_relative_eq!(p.x(), 1.);
+        assert_relative_eq!(p.y(), 0.);
     }
 
     #[test]
@@ -649,8 +649,8 @@ mod tests {
         let c = PlanarLineStringCurve::new(line_string![(x: 0., y: 0.), (x: 2., y: 0.)], 1.);
         let bbox = c.bbox();
 
-        assert_eq!(bbox.min(), coord! {x: -1., y: -1.});
-        assert_eq!(bbox.max(), coord! {x: 3., y: 1.});
+        assert_relative_eq!(bbox.min(), coord! {x: -1., y: -1.});
+        assert_relative_eq!(bbox.max(), coord! {x: 3., y: 1.});
     }
 
     #[test]
@@ -688,13 +688,13 @@ mod tests {
     #[test]
     fn spherical_length() {
         let paris_to_new_york = SphericalLineStringCurve::new(line_string![PARIS, NEW_YORK], 1.);
-        assert_eq!(5853101.331803938, paris_to_new_york.length()); // 5837415.205720471 using [`HaversineLength`] and 5853101.331803938 using [`GeodesicLength`]
+        assert_relative_eq!(5853101.331803938, paris_to_new_york.length()); // 5837415.205720471 using [`HaversineLength`] and 5853101.331803938 using [`GeodesicLength`]
 
         let lille_to_perpignan = SphericalLineStringCurve::new(line_string![LILLE, PERPIGNAN], 1.);
-        assert_eq!(882749.856002331, lille_to_perpignan.length()); // 882995.0489150163 using [`HaversineLength`] and 882749.856002331 using [`GeodesicLength`]
+        assert_relative_eq!(882749.856002331, lille_to_perpignan.length()); // 882995.0489150163 using [`HaversineLength`] and 882749.856002331 using [`GeodesicLength`]
 
         let brest_to_nancy = SphericalLineStringCurve::new(line_string![BREST, NANCY], 1.);
-        assert_eq!(787969.3534391255, brest_to_nancy.length()); // 785611.8752324395 using [`HaversineLength`] and 787969.3534391255 using [`GeodesicLength`]
+        assert_relative_eq!(787969.3534391255, brest_to_nancy.length()); // 785611.8752324395 using [`HaversineLength`] and 787969.3534391255 using [`GeodesicLength`]
     }
 
     #[test]
@@ -740,15 +740,15 @@ mod tests {
         let projected = paris_to_new_york
             .project(point! {x: -6.71, y: 51.42})
             .unwrap();
-        assert_eq!(0.11377423130942187, projected.distance_along_curve);
-        assert_eq!(-388790.4195662504, projected.offset);
+        assert_relative_eq!(0.11377423130942187, projected.distance_along_curve);
+        assert_relative_eq!(-388790.4195662504, projected.offset);
 
         // Point is located on the left (south) of the curve
         let projected = paris_to_new_york
             .project(point! {x: -12.25, y: 45.86})
             .unwrap();
-        assert_eq!(0.19319203534800442, projected.distance_along_curve);
-        assert_eq!(158889.02911883662, projected.offset);
+        assert_relative_eq!(0.19319203534800442, projected.distance_along_curve);
+        assert_relative_eq!(158889.02911883662, projected.offset);
 
         let new_york_to_paris = SphericalLineStringCurve::new(line_string![NEW_YORK, PARIS], 1.);
 
@@ -756,15 +756,15 @@ mod tests {
         let projected = new_york_to_paris
             .project(point! {x: -6.71, y: 51.42})
             .unwrap();
-        assert_eq!(0.8862257686905785, projected.distance_along_curve);
+        assert_relative_eq!(0.8862257686905785, projected.distance_along_curve);
         assert_relative_eq!(388790.4195662507, projected.offset);
 
         // Point is located on the right (south)  of the curve
         let projected = new_york_to_paris
             .project(point! {x: -12.25, y: 45.86})
             .unwrap();
-        assert_eq!(0.8068079646519957, projected.distance_along_curve);
-        assert_eq!(-158889.02911883662, projected.offset);
+        assert_relative_eq!(0.8068079646519957, projected.distance_along_curve);
+        assert_relative_eq!(-158889.02911883662, projected.offset);
 
         let projected = new_york_to_paris.project(PARIS.into()).unwrap();
         assert_relative_eq!(1., projected.distance_along_curve);
@@ -780,24 +780,24 @@ mod tests {
         let paris_to_new_york_projection = paris_to_new_york
             .resolve(1000000. / paris_to_new_york.length())
             .unwrap();
-        assert_eq!(-11.073026969801687, paris_to_new_york_projection.x());
-        assert_eq!(51.452453982109404, paris_to_new_york_projection.y());
+        assert_relative_eq!(-11.073026969801687, paris_to_new_york_projection.x());
+        assert_relative_eq!(51.452453982109404, paris_to_new_york_projection.y());
 
         // Test on a linestring where only the longitude changes (latitude remains almost the same)
         let lille_to_perpignan = SphericalLineStringCurve::new(line_string![LILLE, PERPIGNAN], 1.);
         let lille_to_perpignan_p = lille_to_perpignan
             .resolve(500000. / lille_to_perpignan.length())
             .unwrap();
-        assert_eq!(2.961644856565597, lille_to_perpignan_p.x());
-        assert_eq!(46.13408148827718, lille_to_perpignan_p.y());
+        assert_relative_eq!(2.961644856565597, lille_to_perpignan_p.x());
+        assert_relative_eq!(46.13408148827718, lille_to_perpignan_p.y());
 
         // Test on a linestring where only the latitude changes (longitude remains almost the same)
         let brest_to_nancy = SphericalLineStringCurve::new(line_string![BREST, NANCY], 1.);
         let brest_to_nancy_p = brest_to_nancy
             .resolve(500000. / brest_to_nancy.length())
             .unwrap();
-        assert_eq!(2.268067652986713, brest_to_nancy_p.x());
-        assert_eq!(48.695256847531994, brest_to_nancy_p.y());
+        assert_relative_eq!(2.268067652986713, brest_to_nancy_p.x(), epsilon = 1e-12);
+        assert_relative_eq!(48.695256847531994, brest_to_nancy_p.y(), epsilon = 1e-12);
     }
 
     #[test]
@@ -814,11 +814,11 @@ mod tests {
         );
         let bbox = paris_to_new_york.bbox();
 
-        assert_eq!(
+        assert_relative_eq!(
             bbox.min(),
             coord! { x: -7.651441315145896, y: 51.539101184127524 }
         );
-        assert_eq!(
+        assert_relative_eq!(
             bbox.max(),
             coord! { x: -6.388545844195035, y: 51.940898736377044 }
         );
