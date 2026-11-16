@@ -109,14 +109,23 @@ async function file_selected(el) {
         type: 'circle',
         source: 'anchors',
         paint: {
-            'circle-radius': 5,
+            'circle-radius': [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                8,
+                1,
+                16,
+                6
+            ],
             'circle-color': '#eee',
             'circle-opacity': ['case',
                 ['boolean', ['feature-state', 'selected'], true],
                 0,
                 1,
             ]
-        }
+      },
+      minzoom: 8,
     })
 
     map.addLayer({
@@ -124,14 +133,23 @@ async function file_selected(el) {
         type: 'circle',
         source: 'anchors',
         paint: {
-            'circle-radius': 5,
+            'circle-radius': [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                8,
+                1,
+                16,
+                6
+            ],
             'circle-color': 'blue',
             'circle-opacity': ['case',
                 ['boolean', ['feature-state', 'selected'], true],
                 1,
                 0,
             ]
-        }
+        },
+        minzoom: 8,
     })
 
     map.addLayer({
@@ -139,14 +157,14 @@ async function file_selected(el) {
         type: 'symbol',
         source: 'anchors',
         layout: {
-            //'text-field': ['concat', ['get', 'id'], ['literal', '-'], ['get', 'lrm_id'], ['literal', ' curve_pos:'], ['get', 'curve'], ['literal', ' scale:'], ['get', 'scale']],
             'text-field': ['get', 'id'],
             'text-offset': [1, 0],
         },
         paint: {
             'text-halo-color': 'white',
             'text-halo-width': 2,
-        }
+        },
+        minzoom: 10,
     })
 
     map.addLayer({
@@ -179,15 +197,12 @@ async function file_selected(el) {
         }
     });
 
-
-
     map.on('mouseenter', 'lrms-hitbox', () => {
         map.getCanvas().style.cursor = 'pointer'
     })
     map.on('mouseleave', 'lrms-hitbox', () => {
         map.getCanvas().style.cursor = ''
     })
-
 
     map.on('click', 'lrms-hitbox', (e) => {
         const lrm_id = e.features[0].id;
